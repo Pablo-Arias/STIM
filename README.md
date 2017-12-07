@@ -12,7 +12,7 @@ Some interesting modules:
 Extracting features from audio
 
 ## super_vp_commands ##
-A set of wraper functions around iracm's super vp library
+A set of wraper functions around iracm super-vp library (needs audiosculpt http://forumnet.ircam.fr/product/audiosculpt-en/)
 
 ## video_processing ##
 A set of functions to handle video indexing, audio replacement in video, resolution changes, and more...
