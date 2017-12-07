@@ -8,11 +8,11 @@ I'll do a set of tutorials soon to show how these modules work.
 
 Some interesting modules:
 
-##audio_analysis##
+## audio_analysis ##
 Extracting features from audio
 
-##super_vp_commands##
+## super_vp_commands ##
 A set of wraper functions around iracm's super vp library
 
-##video_processing##
+## video_processing ##
 A set of functions to handle video indexing, audio replacement in video, resolution changes, and more...
