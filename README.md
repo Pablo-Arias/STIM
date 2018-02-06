@@ -16,3 +16,6 @@ A set of wraper functions around IRCAM super-vp library (needs audiosculpt http:
 
 ## video_processing ##
 A set of functions to handle video indexing, audio replacement in video, resolution changes, and more...
+
+
+

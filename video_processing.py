@@ -328,11 +328,12 @@ def convert_to_avi(source, target):
 	except:
 		pass
 	
-	command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 640x360 -pass 1 -an -threads 0 -f rawvideo -y /dev/null"
-	subprocess.call(command, shell=True)
+	#command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 640x360 -pass 1 -an -threads 0 -f rawvideo -y /dev/null"
+	#subprocess.call(command, shell=True)
 
 
-	command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 640x360 -acodec libmp3lame -ab 128k -ar 48000 -ac 2 -pass 2 -threads 0 -f avi "+target
+	#command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 720x576 -acodec libmp3lame -ab 256k -ar 48000 -ac 2 -pass 2 -threads 0 -f avi "+target
+	command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 720x576 -acodec libmp3lame  -pass 1 -ab 256 -threads 0 -f avi "+target
 	subprocess.call(command, shell=True)
 
 
