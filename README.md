@@ -63,3 +63,7 @@ or if you have no right to write into your python installation
 ```
 make install_python_easdif_module_locally
 ```
+
+
+## Instalation and dependencies ##
+Now you can check the example modules to learn how to use these scripts.
