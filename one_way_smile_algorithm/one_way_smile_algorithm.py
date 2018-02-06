@@ -331,7 +331,7 @@ def transform_to_smile(audio_file
                             , feature_window           = 10
                             , harmonicity_threshold    = 0.8
                             , plot_features_pdf        = False
-                            , delete_warp_file         = False
+                            , delete_warp_file         = True
                             , formant_estimation       = "lpc"
                             , do_dynamic_filter        = True
                             , freq_warp_ws             = 512
