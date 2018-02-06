@@ -34,7 +34,7 @@ brew install libsndfile
 
 * Install sckits.audiolab toolbox :
 ```
-pip install scikits.audiolab"
+pip install scikits.audiolab
 ```
 
 * Install Audiosculpt
@@ -65,7 +65,7 @@ make install_python_easdif_module_locally
 ```
 
 
-## Instalation and dependencies ##
+## Tutorials ##
 Now you can check the example modules to learn how to use these scripts.
 
-Just open the .ipybn files inside the folder notebook_examples of the STIM
+Just open the .ipybn files inside the folder notebook_examples of the STIM (even from a browser).
