@@ -67,3 +67,5 @@ make install_python_easdif_module_locally
 
 ## Instalation and dependencies ##
 Now you can check the example modules to learn how to use these scripts.
+
+Just open the .ipybn files inside the folder notebook_examples of the STIM
