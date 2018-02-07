@@ -21,7 +21,8 @@ A set of functions to handle video indexing, audio replacement in video, resolut
 These python modules depend on several externals for them to work properly. If you want to use the super_vp_commands or parse sdif files you should isntall all of the above packages.
 
 
-* Download
+* Downloads
+
 Download the files of STIM and put them somewhere safe in your computer. If you are using anaconda, you add this path to a so these scripts 
 
 
