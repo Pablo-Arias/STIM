@@ -26,10 +26,17 @@ Download the STIM folder (or clone it with git) and put it somewhere safe in you
 Now you need your python distribution to see the STIM folder. To do this you can do one of these :
 * If you are using anaconda, create a file called "STIM_python_module.pth" with the path to the STIM folder inside, that's all. If you are using a mac save it in "/Users/your_user_name/anaconda/lib/python2.7/site-packages" if you are using windows, save it in "path_to_anaconda/anaconda/lib/python2.7/site-packages".
 
-* If you are not using conda, you can import these python modules each time, by typing the following commands at the begining of your script, and changing the PATH_TO_STIM_FOLDER by your actual path to the STIM folder: ```import sys
+* If you are not using conda, you can import these python modules each time, by typing the following commands at the begining of your script, and changing the PATH_TO_STIM_FOLDER by your actual path to the STIM folder: 
+```
+import sys
 sys.path.append('PATH_TO_STIM_FOLDER')
 from audio_analysis import 'the functions you need' #example of import
 ```
+=======
+* Download
+Download the files of STIM and put them somewhere safe in your computer. If you are using anaconda, you add this path to a so these scripts 
+
+>>>>>>> parent of 1498589... new read me
 
 ### Install Homebrew ### 
 Check the Info [here](https://brew.sh/) to install homebrew.
