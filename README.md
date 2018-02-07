@@ -40,7 +40,6 @@ Check the Info [here](https://brew.sh/) to install homebrew.
 ```
 brew install libsndfile
 ```
-
 ###  Install sckits.audiolab toolbox ### 
 If you are using conda, you can try :
 ```
@@ -51,6 +50,8 @@ If you are not using conda, try installing it with pip:
 ```
 pip install scikits.audiolab
 ```
+###  Install pyo ### 
+Pyo is a set of python modules used for RT and offline audioprocessing. To install it download the installer [here](http://ajaxsoundstudio.com/software/pyo/)
 
 ###  Install Audiosculpt ### 
 These scripts use Audiosculpt to generate and parse audio analysis. 
