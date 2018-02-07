@@ -42,13 +42,19 @@ brew install libsndfile
 ```
 
 ###  Install sckits.audiolab toolbox ### 
+If you are using conda, you can try :
+```
+conda install -c weiyan scikit-audiolab
+```
+
+If you are not using conda, try installing it with pip:
 ```
 pip install scikits.audiolab
 ```
 
 ###  Install Audiosculpt ### 
 These scripts use Audiosculpt to generate and parse audio analysis. 
-Thus for them to work properly, make sure you installed Audiosculpt from the [ircam forum](http://forumnet.ircam.fr/)
+For them to work properly, make sure you installed Audiosculpt from the [ircam forum](http://forumnet.ircam.fr/)
 
 Once you installed Audiosculpt, you should update the "Audiosculpt version" in the script super_vp_path inside of the STIM folder so that the python module can call Audiosculpt.
 
@@ -67,13 +73,10 @@ rm -f CMakeCache.txt
 cmake -DEASDIF_DO_PYTHON:bool=on -DPYTHON:STRING=python ..
 make install_python_easdif_module_globally
 ```
-
 or if you have no right to write into your python installation
-
 ```
 make install_python_easdif_module_locally
 ```
-
 
 ## Tutorials ##
 Now you can check the example modules to learn how to use these scripts.
