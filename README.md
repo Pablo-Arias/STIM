@@ -32,11 +32,9 @@ import sys
 sys.path.append('PATH_TO_STIM_FOLDER')
 from audio_analysis import 'the functions you need' #example of import
 ```
-=======
+
 * Download
 Download the files of STIM and put them somewhere safe in your computer. If you are using anaconda, you add this path to a so these scripts 
-
->>>>>>> parent of 1498589... new read me
 
 ### Install Homebrew ### 
 Check the Info [here](https://brew.sh/) to install homebrew.
