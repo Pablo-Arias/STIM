@@ -20,6 +20,7 @@ A set of functions to handle video indexing, audio replacement in video, resolut
 ## Instalation and dependencies ##
 These python modules depend on several externals for them to work properly. If you want to use the super_vp_commands or parse sdif files you should isntall all of the above packages.
 
+!!This is a merging test!!
 
 <<<<<<< HEAD
 * Downloads
