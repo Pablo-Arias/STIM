@@ -22,7 +22,7 @@ These python modules depend on several externals for them to work properly. If y
 
 
 ### Download ###
-Download the STIM folder and put it somewhere safe in your computer — where it will live forever witout being moved. 
+Download the STIM folder (or clone it with git) and put it somewhere safe in your computer — where it will live forever witout being moved. 
 Now you need your python distribution to see the STIM folder. To do this you can do one of these :
 * If you are using anaconda, create a file called "STIM_python_module.pth" with the path to the STIM folder inside, that's all. If you are using a mac save it in "/Users/your_user_name/anaconda/lib/python2.7/site-packages" if you are using windows, save it in "path_to_anaconda/anaconda/lib/python2.7/site-packages".
 
