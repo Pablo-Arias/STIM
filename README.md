@@ -20,18 +20,11 @@ A set of functions to handle video indexing, audio replacement in video, resolut
 ## Instalation and dependencies ##
 These python modules depend on several externals for them to work properly. If you want to use the super_vp_commands or parse sdif files you should isntall all of the above packages.
 
-!!This is a merging test!!
 
-<<<<<<< HEAD
-* Downloads
-
-Download the files of STIM and put them somewhere safe in your computer. If you are using anaconda, you add this path to a so these scripts 
-=======
 ### Download ###
 Download the STIM folder (or clone it with git) and put it somewhere safe in your computer — where it will live forever witout being moved. 
 Now you need your python distribution to see the STIM folder. To do this you can do one of these :
 * If you are using anaconda, create a file called "STIM_python_module.pth" with the path to the STIM folder inside, that's all. If you are using a mac save it in "/Users/your_user_name/anaconda/lib/python2.7/site-packages" if you are using windows, save it in "path_to_anaconda/anaconda/lib/python2.7/site-packages".
->>>>>>> 72446e8fca311bbd9c5146df431e20e1ba922433
 
 * If you are not using conda, you can import these python modules each time, by typing the following commands at the begining of your script, and changing the PATH_TO_STIM_FOLDER by your actual path to the STIM folder: 
 ```
