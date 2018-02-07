@@ -24,17 +24,17 @@ These python modules depend on several externals for them to work properly. If y
 ### Download ###
 Download the files of STIM and put them somewhere safe in your computer. 
 In order for your python install to see these packages you can do one of these :
-* If you are using anaconda, create a file called "STIM_python_module.pth"with the path to the STIM folder inside. If you are using a mac save it in "/Users/your_user_name/anaconda/lib/python2.7/site-packages"
+* If you are using anaconda, create a file called "STIM_python_module.pth" with the path to the STIM folder inside, that's all. If you are using a mac save it in "/Users/your_user_name/anaconda/lib/python2.7/site-packages" if you are using windows, save it in "path_to_anaconda/anaconda/lib/python2.7/site-packages".
 
-* If you are not using conda, you can import these python modules each time for instance by doing this at the begining of your script, and changing the PATH_TO_STIM_FOLDER by your actual path to the STIM folder: 
+* If you are not using conda, you can import these python modules each time, by typing the following commands at the begining of your script, and changing the PATH_TO_STIM_FOLDER by your actual path to the STIM folder: 
 ```
 import sys
 sys.path.append('PATH_TO_STIM_FOLDER')
-from audio_analysis import 'the functions you need'
+from audio_analysis import 'the functions you need' #example of import
 ```
 
 ### Install Homebrew ### 
-Info [here](https://brew.sh/)
+Check the Info [here](https://brew.sh/) to install homebrew.
 
 ###  Install libsnd ### 
 ```
