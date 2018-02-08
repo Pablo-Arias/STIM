@@ -29,7 +29,6 @@ import sys
 sys.path.append('/Users/arias/Documents/Developement/Python/')
 from conversions import lin2db, db2lin
 
-
 def wav_to_mono(source, target):
 	"""
 	source : source audio file
@@ -99,14 +98,20 @@ def wav_to_aif(source, target):
 ##### ------------------------------------------------------
 def extract_sentences_tags(source, rms_threshold = -50, WndSize = 16384, overlap = 8192):
 	"""
-	source : fsource audio file
 	This function separates all the sentences inside an audiofile.
 	It takes each sentence and put it into one audio file inside target_folder with the name target_nb
 	The default parameters were tested with notmal speech.
 	Only works if file is at least 500 ms long, which can be tuned
 	You can change the rms threshold to tune the algorithm
 
-	returns tags in pairs of [begining end]
+	input:
+		source : fsource audio file
+		rms_threshold : this is the threshold
+		WndSize : window size to compue the RMS on
+		overlap : nb of overlap samples
+
+	returns:
+		tags in pairs of [begining end]
 	"""	
 	try:
 		x, fs, enc 		= aiffread(str(source))
@@ -177,7 +182,12 @@ def extract_sentences_tags(source, rms_threshold = -50, WndSize = 16384, overlap
 
 def index_wav_file(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed"):
 	"""
-	source : source audio file
+	input:
+		source : fsource audio file
+		rms_threshold : this is the threshold
+		WndSize : window size to compue the RMS on
+		target_folder : folder to save the extracted sounds in
+
 	This function separates all the sentences inside an audiofile.
 	It takes each sentence and put it into one audio file inside target_folder with the name target_nb
 	The default parameters were tested with notmal speech.
@@ -393,6 +403,7 @@ def normalize_folder_loudness(folder, target_folder, dbA=70):
 	dbA : normalisation threshold
 
 	warning : only works with mono file and only reads wav files, for now
+	This only works if you have matlab and matlab engine installed
 	"""
 	import sys
 	import matlab.engine

@@ -581,10 +581,17 @@ def get_spectrum(file, window_size = 256, noverlap = 0, plot_spec = False, plot_
 
 
 
-# ---------- get_true_env_analysis
+# ---------- get_f0
 def get_f0(audio_file, analysis ="",wait = True, destroy_sdif_after_analysis = True):
 	"""
     Get f0
+    	audio_file : file to analyse
+
+    return : 
+    	f0times: time tags
+    	f0harm: signal harmonicity
+    	f0val: fundamental frequency estimation in Hz
+
     """
 	if os.path.dirname(audio_file) == "":
 		file_tag = os.path.basename(audio_file)
@@ -673,6 +680,13 @@ def get_sound_duration(file):
 	sound_in, sr, pcm = wavread(file)
 
 	return len(sound_in)/float(sr)
+
+def get_nb_channels(audio_file):
+	"""
+	get number of channels of audiofile
+	"""
+	f = Sndfile(audio_file, 'r')
+	return f.channels	
 
 
 def find_silence(audio_file, threshold = -65, wnd_size = 16384):
