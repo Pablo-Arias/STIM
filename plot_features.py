@@ -135,13 +135,9 @@ def spectral_env_plot_params(ax, x_limit = (500, 20000), envelope = None, adapti
 	
 	
 	xlim(x_limit[0], x_limit[1])
-	
-	if envelope == None:
-		ylim(-150, -70)
 
-	else:
-		if adaptive_x_grid:
-			ylim(np.min(envelope) - margin, np.max(envelope) + margin)
+	if adaptive_x_grid:
+		ylim(np.min(envelope) - margin, np.max(envelope) + margin)
 
 	
 
@@ -544,8 +540,6 @@ def plot_formants_on_true_envelope(audio_files, label = None, show = True, save_
 		bins = freqs_to_bins(frequency, nb_points, min_freq = 20, max_freq = 22000)
 		if len(bins) > 0 :
 			for index in range(len(bins)):
-				print frequency[index]
-				print [data[bins[index]]]
 				plt.plot(frequency[index], [data[bins[index]]], 'ro', color = plot_colors[index])
 
 	spectral_env_plot_params(ax)

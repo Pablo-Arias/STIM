@@ -18,7 +18,6 @@ import os
 import numpy as np
 import parse_sdif
 import super_vp_path
-super_vp_path = "/Applications/AudioSculpt\ 3.4.5/AudioSculpt\ 3.4.5.app/Contents/MacOS/supervp"
 
 
 # ---------- generate_f0_analysis
