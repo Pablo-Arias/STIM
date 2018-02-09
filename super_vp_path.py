@@ -10,5 +10,8 @@
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
-AudioSculpt_version = "3.4.5"
-super_vp_path = "/Applications/AudioSculpt\ "+AudioSculpt_version+"/AudioSculpt\ "+AudioSculpt_version+".app/Contents/MacOS/supervp"
+def get_super_vp_path():
+	import glob, os
+	AudioSculpt_version = glob.glob("/Applications/AudioSculpt*/AudioSculpt*.app/Contents/MacOS/supervp")[0]
+	AudioSculpt_version = AudioSculpt_version.replace(' ', "\ ")# = os.path.normpath(AudioSculpt_version)
+	return AudioSculpt_version

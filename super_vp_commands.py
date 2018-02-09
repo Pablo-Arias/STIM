@@ -17,8 +17,8 @@ import shlex, subprocess
 import os
 import numpy as np
 import parse_sdif
-import super_vp_path
-
+from super_vp_path import get_super_vp_path
+super_vp_path = get_super_vp_path()
 
 # ---------- generate_f0_analysis
 def generate_f0_analysis(audio_file, analysis ="", wait = True):

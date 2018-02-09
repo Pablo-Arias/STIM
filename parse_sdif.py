@@ -20,7 +20,6 @@ import super_vp_commands
 #sdif
 import eaSDIF
 import sys
-sys.path.append('/Users/arias/as_pysrc-master')
 from fileio.sdif.FSdifLoadFile import FSdifLoadFile
 
 

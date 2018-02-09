@@ -30,7 +30,6 @@ plt.style.use('ggplot')
 
 
 #local packages
-sys.path.append('/Users/arias/Documents/Developement/Python/')
 from plot_features import plot_mean_true_env_from_audio
 from transform_audio import wav_to_mono, aif_to_wav
 from parse_sdif import get_f0_info, get_formants_info
@@ -433,3 +432,4 @@ def transform_to_smile(audio_file
 
     if delete_warp_file:
         os.remove(warp_file)
+        os.remove(warped_file)
