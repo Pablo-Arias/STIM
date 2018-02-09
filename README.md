@@ -39,6 +39,9 @@ Check the Info [here](https://brew.sh/) to install homebrew.
 ###  Install libsnd ### 
 ```
 brew install libsndfile
+brew install cmake
+brew install autoconf automake
+brew install swig
 ```
 ###  Install sckits.audiolab toolbox ### 
 If you are using conda, you can try :
@@ -71,7 +74,8 @@ cd EASDIF_SDIF
 mkdir -p build_EASDIF_x86_64
 cd build_EASDIF_x86_64
 rm -f CMakeCache.txt
-cmake -DEASDIF_DO_PYTHON:bool=on -DPYTHON:STRING=python ..
+cmake -DEASDIF_DO_PYTHON:bool=on -DPYTHON:STRING=python -DEASDIF_BUILD_STATIC:BOOL=ON ..
+make Easdif_static_pic
 make install_python_easdif_module_globally
 ```
 or if you have no right to write into your python installation
