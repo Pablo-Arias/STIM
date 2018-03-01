@@ -280,11 +280,11 @@ def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=
 	
 	if "lpc" == warp_method:
 		#parameters =  "-t -Afft -M512 -N512 -Np2 -oversamp 64 -f0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
-		parameters =  "-t -Afft "+lpc_order+" -M"+freq_warp_ws+" -N"+freq_warp_ws+" -Np2 -oversamp "+str(freq_warp_oversampling) +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
+		parameters =  "-t -Afft "+lpc_order+" -M"+str(freq_warp_ws)+" -N"+freq_warp_ws+" -Np2 -oversamp "+str(freq_warp_oversampling) +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
 	
 	elif "t_env" == warp_method:
 		generate_f0_analysis( source_sound, f0_analysis)
-		parameters =  "-t -Afft -atenv -F0 "+f0_analysis+" -M"+freq_warp_ws+" -N"+freq_warp_ws+" -Np2 -oversamp "++str(freq_warp_oversampling)+" -F0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
+		parameters =  "-t -Afft -atenv -F0 "+f0_analysis+" -M"+freq_warp_ws+" -N"+freq_warp_ws+" -Np2 -oversamp "+str(freq_warp_oversampling)+" -F0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
 	else:
 		print "wrong warping method specified"
 	

@@ -479,6 +479,9 @@ def get_mean_lpc_from_audio(audio,wait = True, nb_coefs = 45, destroy_sdif_after
 def get_true_env_analysis(audio_file, analysis="", wait = True, f0 = "mean", destroy_sdif_after_analysis = True):
 	"""
     Get mean true env data
+
+    return:
+		spectral envelope
     """
 	if analysis== "":
 		if os.path.dirname(audio_file) == "":
@@ -738,8 +741,3 @@ def find_silence(audio_file, threshold = -65, wnd_size = 16384):
  				silence_tags.append([begining_s, end_s])
 
  	return silence_tags
-
-
-
-
-
