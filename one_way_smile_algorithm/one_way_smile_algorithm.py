@@ -21,6 +21,7 @@ import sys
 from glob import glob
 from os.path import basename
 from pyo import *
+from bisect import bisect
 
 
 #plots
@@ -74,7 +75,7 @@ def get_gain_automation(time_list, harmonicity_list, max_gain, neutral_gain, boo
             # Take only one every 12 in order to have more smooth transitions.
             if i%8 == 0:
                 if harmonicity_list[i] == boost_when_harmonic:
-                    pairs.append((time, max_gain))
+                    pairs.append((time, max_gain[i]))
                 else:
                     pairs.append((time, neutral_gain))
         
@@ -89,6 +90,7 @@ def dynamic_filter(s, audio_file, output_file, features_df, alpha):
     # ---------- Parameter init
     #harmonic filter Q
     Q           = 1.5
+    dynamic_alpha_transf = isinstance(alpha, list)
 
     #for non harmoncic content the eq is:
     non_harmonic_eq_Q           = 1.8
@@ -97,10 +99,11 @@ def dynamic_filter(s, audio_file, output_file, features_df, alpha):
 
     # # ---------- global parameters ----------
     time_index = 0
-
+    
     # # ---------- file parameters ----------
-    gain                    = 20*(alpha-1) # see paper to know why
-    non_harmonic_eq_gain    = gain
+    time_alpha_array  = alpha[0]
+    alpha_array       = alpha[1]
+    gains             = [20*(alpha-1) for alpha in alpha_array]
     duration                = sndinfo(audio_file)[1]
     
     # # --------- sound parameters ----------
@@ -108,13 +111,18 @@ def dynamic_filter(s, audio_file, output_file, features_df, alpha):
     formant_3_freqs         = list(formant3.values)
     time_list               = list(formant3.index)
 
+    #Resample gains to good time set
+    gains                = [get_correspondent_time_taged_value(time, time_alpha_array, gains) for time in time_list]
+    non_harmonic_eq_gain    = gains
+
     harmonicity_list        = features_df["is_harmonic"].values
 
     min_f3_freq_val            = 1000 #This is the minimum frequency for automating the filter
     max_f3_freq_val            = 5000 #This is the maximum frequency for automating the filter
     formant_3_freq_automation  = get_formant_frequency_automation(time_list, formant_3_freqs, min_val = min_f3_freq_val , max_val = max_f3_freq_val)
-    formant_3_gain_automation  = get_gain_automation(time_list, harmonicity_list, gain, neutral_gain = 0, boost_when_harmonic = True)
+    formant_3_gain_automation  = get_gain_automation(time_list, harmonicity_list, gains, neutral_gain = 0, boost_when_harmonic = True)
     inharmonic_gain_automation = get_gain_automation(time_list, harmonicity_list, non_harmonic_eq_gain, neutral_gain = 0, boost_when_harmonic = False)
+
 
     # # --------- audio processing ----------
     s = s.boot()
@@ -144,7 +152,15 @@ def dynamic_filter(s, audio_file, output_file, features_df, alpha):
     #s.stop()
     #s.shutdown()
 
+def get_correspondent_time_taged_value(time_tag, time_alpha_array, alpha_array):
+    index = bisect(time_alpha_array, time_tag)
+    return alpha_array[index-1]
+
 def generate_warping_file(features_df, audio_file, alpha):
+    time_alpha_array = alpha[0]
+    alpha_array      = alpha[1]
+
+    #This function generates a warping file when alpha is dynmaic
     x, fs, enc = wavread(audio_file)
     nbpf = 7 # 5 formants + 2 neutral points + 2 begining and end spectrum
 
@@ -173,10 +189,10 @@ def generate_warping_file(features_df, audio_file, alpha):
     with open( warp_name, 'w') as f:
         #write number of bpf
         f.write(str(nbpf)+'\n')
-        
         for time, row in features_df.iterrows():
             if row["is_harmonic"]:
-                #write warps
+                alpha = get_correspondent_time_taged_value(time_tag = time, time_alpha_array = time_alpha_array, alpha_array = alpha_array)
+
                 f.write(str(time) #Time
                         + ' '          
                         + str(0) + ' ' + str(0) #0 to 0
@@ -186,8 +202,6 @@ def generate_warping_file(features_df, audio_file, alpha):
                         + str(F2_mean) + ' ' + str(F2_mean * alpha)#str((freqs_F1[i] * F1_coef) #1st formant bp
                         + ' '          
                         + str(F3_mean) + ' '+ str(F3_mean  * alpha)#3rd formant bp
-                        #For a linear slope in the warping use the following formula instead of the previous
-                        #+ str(F3_mean) + ' '+ str(F3_mean  * (1-((F2_mean*(1-alpha))/F3_mean)))#3rd formant bp
                         + ' '
                         + str(F5_mean) + ' ' + str(F5_mean) #5rd formant bp
                         + ' '
@@ -196,7 +210,6 @@ def generate_warping_file(features_df, audio_file, alpha):
                         + str(fs/2) + ' ' + str(fs/2) #Last bpf
                         + '\n'
                        )
-
                 #very_adaptive_freq_warp
                 #f.write(str(time) #Time
                 #        + ' '          
@@ -216,9 +229,8 @@ def generate_warping_file(features_df, audio_file, alpha):
                 #        + '\n'
                 #       )
 
-
-
     return warp_name
+
 
 
 def find_nearest(array, value):
@@ -227,7 +239,7 @@ def find_nearest(array, value):
 
 
 # ---------- plot to a file the sound features used in the algorithm
-def plot_file_info(features_df, sound_filename, harmonicity_threshold):
+def plot_file_info(features_df, sound_filename, harmonicity_threshold, alpha):
     features_df  = features_df.reset_index()
     time         = features_df["time"].values
     F1           = features_df["F1"].values
@@ -246,7 +258,7 @@ def plot_file_info(features_df, sound_filename, harmonicity_threshold):
     fig = plt.figure()
 
     #Waveform
-    plt.subplot(411)
+    plt.subplot(511)
     ylabel('Amplitude')
     title('Waveform')
     grid(True)
@@ -261,7 +273,7 @@ def plot_file_info(features_df, sound_filename, harmonicity_threshold):
     plt.plot(t, sound_data)
 
     #F0
-    plt.subplot(412)
+    plt.subplot(512)
     ylabel('Frequency')
     grid(True)
     plt.tick_params(
@@ -276,7 +288,7 @@ def plot_file_info(features_df, sound_filename, harmonicity_threshold):
 
 
     #1st Formant
-    plt.subplot(413)
+    plt.subplot(513)
     ylabel('Frequency')
     grid(True)
     plt.tick_params(
@@ -305,7 +317,7 @@ def plot_file_info(features_df, sound_filename, harmonicity_threshold):
 
 
     #Harmonicity
-    plt.subplot(414)
+    plt.subplot(514)
     title('Harmonicity')
     ylabel('%')
     xlabel('time (s)')
@@ -315,6 +327,19 @@ def plot_file_info(features_df, sound_filename, harmonicity_threshold):
     #Treshold
     harmonic_vector = harmonicity_threshold * ones(len(time))
     plt.plot(time, harmonic_vector, label = 'Harm Treshold')
+
+    #Alpha
+    plt.subplot(515)
+    title('Alpha')
+    ylabel('a.u.')
+    xlabel('time (s)')
+    grid(True)
+    time_alpha_array = alpha[0]
+    alpha_array      =  alpha[1]
+    alpha = [get_correspondent_time_taged_value(t, time_alpha_array, alpha_array) for t in time]
+    
+    plt.plot(time, alpha, label = 'Harmonicity')
+
 
     legend(loc='best', prop={'size':6})
 
@@ -344,8 +369,11 @@ def transform_to_smile(audio_file
         audio_file             : audio_file to transform
         target_file            : target audio file to create
         alpha                  : alpha parameter which controls both the amount of shift and of gain boost, alpha = 1.25 is equivalent to the smile algorithm, alpha = 0.8 is the pursed transofrmation
+                                 For dynamic transformations, alpha can now also be a two dimension list with time (in seconds) and alpha values
+
         feature_window         : how many samples to mean formant frequencies over time
         harmonicity_threshold  : what harmonicity threshold to take to consider when the signal is harmonic
+        plot_features_pdf      : plot the features used by ziggy for the overal tranformation. This is usefull to see if everything is estimated correctly when transforming a sound
         formant_estimation     : can be either lpc, t_env or praat, the method used for the IEEE paper and the Curr Bio is LPC
         do_dynamic_filter      : If set to True, apply the dynamic filter t the 3rd formant, as well as the inharmonic filter
                                 if False, no filteringis performed
@@ -362,7 +390,10 @@ def transform_to_smile(audio_file
     warning : 
         this function only works for mono files    
     """
-    #name init
+    #if alpha is an int or a float, change it to an array with time and alpha
+    if isinstance(alpha, float) or isinstance(alpha, float):
+        alpha = [[1], [alpha]]
+
     warped_file   = "warped_file.wav"
     filtered_file = target_file
 
@@ -427,9 +458,11 @@ def transform_to_smile(audio_file
         copyfile(warped_file, filtered_file)
 
     if plot_features_pdf:
-        plot_file_info(features_df = features_df, sound_filename = audio_file,harmonicity_threshold = harmonicity_threshold)
+        plot_file_info(features_df = features_df, sound_filename = audio_file,harmonicity_threshold = harmonicity_threshold, alpha=alpha)
         plt.savefig( filtered_file+".pdf" , dpi = 350)
 
     if delete_warp_file:
         os.remove(warp_file)
         os.remove(warped_file)
+
+
