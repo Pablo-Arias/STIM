@@ -1,8 +1,9 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by pablo Arias @ircam on 11/2015
-# ---------- make data conversions
-# ---------- 
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ----------
+# ---------- make data conversions 
 # ----------
 # ---------- import sys
 # ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')

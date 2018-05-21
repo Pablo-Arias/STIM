@@ -1,8 +1,9 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by pablo Arias @ircam on 11/2015
-# ---------- functions for calling praat scripts from python
-# ---------- 
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ----------
+# ---------- functions for calling praat scripts from python 
 # ----------
 # ---------- import sys
 # ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')

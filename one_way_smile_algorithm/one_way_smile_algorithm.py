@@ -1,6 +1,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by Pablo Arias @ircam on 03/2017
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ----------
 # ---------- transform a sound with the smile algorithm
 # ----------
 # ---------- import sys
@@ -426,7 +428,6 @@ def transform_to_smile(audio_file
     new_harm_vals = []
     new_f0_vals = []
 
-    tests         = []
     new_harm_vals = []
     new_f0_vals   = []
     for time in features_df.index:

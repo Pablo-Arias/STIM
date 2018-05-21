@@ -1,6 +1,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by pablo Arias @ircam on 02/2016
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ----------
 # ---------- execute different audio transformations
 # ---------- to use this don't forget to include these lines before your script:
 # ----------

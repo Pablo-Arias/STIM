@@ -1,6 +1,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by pablo Arias @ircam on 09/2016
+# ---------- Copyright (c) 2018 CREAM Lab @ IRCAM
+# ----------
 # ---------- This script plot the MPS in real time, it captures the sound for the 
 # ---------- system input (Change this one to be soundflowerbed for example and 
 # ---------- the output of live to be soundflowerbed)

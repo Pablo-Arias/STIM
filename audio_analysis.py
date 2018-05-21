@@ -1,6 +1,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by pablo Arias @ircam on 11/2015
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ----------
 # ---------- Analyse audio and return sound features
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
@@ -392,13 +394,13 @@ def get_formant_ts_praat(audio_file):
 	import pandas as pd
 	import os
 	audio_file = os.path.abspath(audio_file)
-	cmd = ['/Applications/Praat.app/Contents/MacOS/Praat'
-					,'/Users/arias/Documents/Developement/Python/ts_formants.praat'
-					, audio_file
-		 ]
-	
-	content = subprocess.check_output(cmd, shell=False, stderr=subprocess.STDOUT).splitlines()
 
+	content = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat'
+		, "--run"
+		,'/Users/arias/Documents/Developement/Python/ts_formants.praat'
+		, audio_file
+		]);
+	content = content.splitlines()
 
 	#parse and organize praat's output
 	freqs_df = pd.DataFrame()
