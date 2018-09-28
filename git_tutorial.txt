@@ -10,6 +10,4 @@ Just ...
 
 git pull
 
-line added by pablo
-
-escape:wq to get out of a full screen message in commit
+Escape from messsage command : escape:wq to get out of a full screen message in commit
