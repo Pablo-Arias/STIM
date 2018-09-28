@@ -6,7 +6,8 @@ git push
 
 
 and then the other one..
-
 Just ...
 
 git pull
+
+line added by pablo
