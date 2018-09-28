@@ -271,7 +271,7 @@ def get_tidy_formants(audio_file, nb_formants):
 	#Tidy formants
 	all_formants = pd.DataFrame()
 	for cpt in range(1, len(formants)+1):
-	    formant = formants[0]
+	    formant = formants[cpt-1]
 	    formant["Formant"] = ["F" + str(cpt) for i in range(len(formant))]
 	    all_formants = all_formants.append(formant)
 
