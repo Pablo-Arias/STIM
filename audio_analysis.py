@@ -395,11 +395,9 @@ def get_formant_ts_praat(audio_file):
 	import pandas as pd
 	import os
 	audio_file = os.path.abspath(audio_file)
-	cmd = ['/Applications/Praat.app/Contents/MacOS/Praat'
-					, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat')
-					, audio_file
-		 ]
-	content = subprocess.check_output(cmd, shell=False, stderr=subprocess.STDOUT).splitlines()
+	
+	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat'), audio_file]);
+	content = out.splitlines()
 
 	#parse and organize praat's output
 	freqs_df = pd.DataFrame()
