@@ -6,9 +6,9 @@ git push
 
 
 and then the other one..
-
 Just ...
 
 git pull
 
 line added by daniel
+line added by pablo
