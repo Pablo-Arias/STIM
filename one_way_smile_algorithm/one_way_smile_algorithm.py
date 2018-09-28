@@ -2,7 +2,7 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by Pablo Arias @ircam on 03/2017
-# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Universite
 # ----------
 # ---------- transform a sound with the smile algorithm
 # ----------
@@ -394,7 +394,7 @@ def transform_to_smile(audio_file
         this function only works for mono files    
     """
     #if alpha is an int or a float, change it to an array with time and alpha
-    if isinstance(alpha, float) or isinstance(alpha, float):
+    if isinstance(alpha, int) or isinstance(alpha, float):
         alpha = [[1], [alpha]]
 
     warped_file   = "warped_file.wav"

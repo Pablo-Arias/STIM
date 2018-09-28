@@ -2,7 +2,7 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by pablo Arias @ircam on 11/2015
-# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Universite
 # ----------
 # ---------- execute different super vp commands
 # ---------- to use this don't forget to include these lines before your script:
@@ -90,8 +90,9 @@ def generate_formant_analysis(audio_file, analysis = "", nb_formants = 5, wait =
 			file_tag = os.path.splitext(file_tag)[0]
 			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
 
-	parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+str(nb_formants)+" 45  -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS1 "+ analysis
-	#parameters 	=  "-t -ns -S"+audio_file+" -Aformant_tenv n"+str(nb_formants)+" / -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS0 "+ analysis
+	parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+str(nb_formants)+" 45  -Np0 -M0.0464399093s -oversamp 8 -Whanning  -OS1 "+ analysis
+	# parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+str(nb_formants)+" 45  -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS1 "+ analysis
+	# parameters 	=  "-t -ns -S"+audio_file+" -Aformant_tenv n"+str(nb_formants)+" / -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS0 "+ analysis
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)
