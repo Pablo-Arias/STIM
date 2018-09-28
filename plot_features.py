@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ---------- Made by Pablo Arias @ircam on 11/2015
-# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Université
+# ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Universite
 # ---------- plot sound features
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
