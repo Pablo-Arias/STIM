@@ -18,6 +18,7 @@ from super_vp_commands import generate_LPC_analysis
 from parse_sdif import mean_matrix, mean_formant_from_sdif, formant_from_sdif
 from conversions import lin2db, db2lin
 import os
+import pandas as pd
 
 
 # --------------------------------------------------------------------#
@@ -259,6 +260,26 @@ def formant_from_audio(audio_file, nb_formants):
 	return formants
 
 
+def get_tidy_formants(audio_file, nb_formants):
+	"""
+	Convert formant_from_audio data to a tidy dataframe
+ 	parameters:
+		formants 	: formant data coming from the formant_from_audio function
+	"""	
+	formants = formant_from_audio(audio_file, nb_formants)
+
+	#Tidy formants
+	all_formants = pd.DataFrame()
+	for cpt in range(1, len(formants)+1):
+	    formant = formants[0]
+	    formant["Formant"] = ["F" + str(cpt) for i in range(len(formant))]
+	    all_formants = all_formants.append(formant)
+
+	all_formants.index.names = ['time']
+
+	return all_formants
+
+
 def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True):
 	"""
  	parameters:
@@ -396,6 +417,12 @@ def get_formant_ts_praat(audio_file):
 	import os
 	audio_file = os.path.abspath(audio_file)
 	
+	# cmd = [‘/Applications/Praat.app/Contents/MacOS/Praat’
+ #                    , os.path.join(os.path.dirname(os.path.realpath(__file__)), ‘ts_formants.praat’)
+ #                    , audio_file
+ #         ]
+ #    content = subprocess.check_output(cmd, shell=False, stderr=subprocess.STDOUT).splitlines()
+
 	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat'), audio_file]);
 	content = out.splitlines()
 
