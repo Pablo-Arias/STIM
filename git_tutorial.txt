@@ -1,2 +1,12 @@
 git clone https://github.com/Pablo-Arias/STIM.git
 git status
+git add .
+git commit -m "commit message"
+git push
+
+
+and then the other one..
+
+Just ...
+
+git pull
