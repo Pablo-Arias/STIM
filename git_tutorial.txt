@@ -1,0 +1,2 @@
+git clone https://github.com/Pablo-Arias/STIM.git
+git status
