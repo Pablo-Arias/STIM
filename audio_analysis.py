@@ -444,10 +444,10 @@ def get_formant_ts_praat(audio_file):
 	freqs_df = freqs_df.dropna()
 	bws_df   = bws_df.dropna()
 
-	freqs_df = freqs_df.stack().to_frame("frequency")
+	freqs_df = freqs_df.stack().to_frame("Frequency")
 	freqs_df.index = freqs_df.index.rename(["time", "Formant"])
 
-	bws_df = bws_df.stack().to_frame("frequency")
+	bws_df = bws_df.stack().to_frame("Bandwidth")
 	bws_df.index = bws_df.index.rename(["time", "Formant"])
 
 	return freqs_df, bws_df
