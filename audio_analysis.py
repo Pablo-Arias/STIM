@@ -229,7 +229,7 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 # ----------------- 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
-def formant_from_audio(audio_file, nb_formants):
+def formant_from_audio(audio_file, nb_formants, ana_winsize=512):
 	"""
  	parameters:
 		audio_file 	: file to anlayse
@@ -252,7 +252,7 @@ def formant_from_audio(audio_file, nb_formants):
 		formant_analysis = os.path.dirname(audio_file)+ "/" + file_tag + "formant.sdif"
 
 	from super_vp_commands import generate_formant_analysis
-	generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants)
+	generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants, ana_winsize = ana_winsize)
 	formants = formant_from_sdif(formant_analysis)
 	
 	os.remove(formant_analysis)
@@ -260,13 +260,13 @@ def formant_from_audio(audio_file, nb_formants):
 	return formants
 
 
-def get_tidy_formants(audio_file, nb_formants):
+def get_tidy_formants(audio_file, nb_formants, ana_winsize=512):
 	"""
 	Convert formant_from_audio data to a tidy dataframe
  	parameters:
 		formants 	: formant data coming from the formant_from_audio function
 	"""	
-	formants = formant_from_audio(audio_file, nb_formants)
+	formants = formant_from_audio(audio_file, nb_formants, ana_winsize)
 
 	#Tidy formants
 	all_formants = pd.DataFrame()
@@ -280,7 +280,7 @@ def get_tidy_formants(audio_file, nb_formants):
 	return all_formants
 
 
-def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True):
+def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True, ana_winsize = 512):
 	"""
  	parameters:
 		audio_file 	: file to anlayse
@@ -306,9 +306,9 @@ def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True):
 	from super_vp_commands import generate_formant_analysis, generate_tenv_formant_analysis
 	
 	if use_t_env:
-		generate_tenv_formant_analysis(audio_file, analysis = formant_analysis, nb_formants = 5, wait = True)
+		generate_tenv_formant_analysis(audio_file, analysis = formant_analysis, nb_formants = 5, wait = True, ana_winsize = ana_winsize)
 	else:
-		generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants)
+		generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants, ana_winsize = ana_winsize)
 
 	mean_formants = mean_formant_from_sdif(formant_analysis)
 	
@@ -317,7 +317,7 @@ def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True):
 	return mean_formants
 
 
-def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", destroy_sdif_after_analysis = True):
+def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", destroy_sdif_after_analysis = True, ana_winsize = 512):
 	"""
  	parameters:
 		audio_file_name 	: pandas data frame with a formant
@@ -334,10 +334,10 @@ def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", de
 	#do formant analysis
 	analysis_name = "formant_generated_analysis_X2345.sdif"
 	if t_env_or_lpc == "lpc":
-		generate_formant_analysis(audio_file, analysis = analysis_name, nb_formants = nb_formants, wait = True)
+		generate_formant_analysis(audio_file, analysis = analysis_name, nb_formants = nb_formants, wait = True, ana_winsize = ana_winsize)
 	
 	elif  t_env_or_lpc == "t_env":
-		generate_tenv_formant_analysis(audio_file, analysis = analysis_name, nb_formants = nb_formants, wait = True)
+		generate_tenv_formant_analysis(audio_file, analysis = analysis_name, nb_formants = nb_formants, wait = True, ana_winsize = ana_winsize)
 	
 	else:
 		print "t_env_or_lpc should be either t_env or lpc"

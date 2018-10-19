@@ -365,6 +365,7 @@ def transform_to_smile(audio_file
                             , lpc_order                = 25
                             , warp_method              = "lpc"
                             , freq_warp_oversampling   = 64
+                            , ana_winsize              = 512
                         ):
     """
     Transforms a mono file using the smile algorithm
@@ -386,6 +387,7 @@ def transform_to_smile(audio_file
                                   and specifies what enevelope estimation to use in the warping stage
                                   the default is lpc
         freq_warp_oversampling : Oversampling of the frequency warping
+        ana_winsize            : svp formant analysis window size
 
     output : 
         A file called target file transformed with the smile effect
@@ -405,10 +407,10 @@ def transform_to_smile(audio_file
 
     #generate formant analysis
     if formant_estimation == "lpc":
-        features_df = get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", destroy_sdif_after_analysis = True)
+        features_df = get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", destroy_sdif_after_analysis = True, ana_winsize = ana_winsize)
     elif formant_estimation == "t_env":
         #TODO : TEST the true env extraction of formants
-        features_df = get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "t_env", destroy_sdif_after_analysis = True)
+        features_df = get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "t_env", destroy_sdif_after_analysis = True, ana_winsize = ana_winsize)
 
     elif formant_estimation == "praat":
         from audio_analysis import get_formant_ts_praat
