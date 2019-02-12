@@ -4,7 +4,7 @@ endform
 
 Read from file... 'filename$'
 
-To Formant (burg)... 0.001 5 5500 0.025 50
+To Formant (burg)... 0.01 5 5500 0.025 50
 f1 = Get mean... 1 0.0 0.0 Hertz
 f1$ = fixed$(f1, 2)
 

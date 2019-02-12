@@ -401,6 +401,31 @@ def formant_dataframe_to_arrays(formants):
 
 import numpy as np
 
+# Extract_ts_of_pitch_praat
+def Extract_ts_of_pitch_praat(Fname):
+	"""
+		Fname : input file name
+	"""
+	import subprocess
+	import os	
+
+	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
+
+	out = out.splitlines()
+
+	times = []
+	f0s = []
+
+	for line in out:
+		line = line.split()
+		times.append(line[0])
+		f0s.append(line[1])
+
+	#print times
+	f0s = [np.nan if item == '--undefined--' else float(item) for item in f0s]
+	return times, f0s
+
+
 #get formant time series with praat
 def get_formant_ts_praat(audio_file):
 	"""
@@ -452,37 +477,42 @@ def get_formant_ts_praat(audio_file):
 
 	return freqs_df, bws_df
 
-# Extract_ts_of_pitch_praat
-def Extract_ts_of_pitch_praat(Fname):
-	import subprocess
-	import os	
-
-	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
-
-	out = out.splitlines()
-
-	times = []
-	f0s = []
-
-	for line in out:
-		line = line.split()
-		times.append(line[0])
-		f0s.append(line[1])
-
-	#print times
-	f0s = [np.nan if item == '--undefined--' else float(item) for item in f0s]
-	return times, f0s
-
-
 
 #Extract mean formant with praat
 def get_mean_formant_praat(Fname):
+	"""
+	Fname : file name to analyse
+	get mean formants with praat
+	"""
 	import subprocess
-	script_name=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
+	import os
 
+	script_name=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
 	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
 	Title, F1, F2, F3, F4, F5 = x.splitlines()
-	return Title, float(F1), float(F2), float(F3), float(F4), float(F5)
+	return float(F1), float(F2), float(F3), float(F4), float(F5)
+
+
+#Extract mean formant with praat
+def get_mean_tidy_formant_praat(Fname):
+	"""
+	Fname : file name to analyse
+	return mean formant values in dataframe
+	"""
+	import subprocess
+	import os
+
+	nb_formants = 5 # TODO parameterize this to Praat
+
+
+	formant_tags = ["F"+str(i) for i in range(1, nb_formants+1)]
+	formants     = get_mean_formant_praat(Fname)
+	data = {'formant': formant_tags, "frequency": formants}
+
+	return pd.DataFrame.from_dict(data)
+
+
+	
 
 
 
