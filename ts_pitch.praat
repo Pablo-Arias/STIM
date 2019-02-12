@@ -5,7 +5,7 @@ Read from file... 'filename$'
 
 tmin = Get start time
 tmax = Get end time
-To Pitch... 0 75.0 600.0
+To Pitch... 0 75.0 350.0
 Rename: "pitch"
 
 for i to (tmax-tmin)/0.001

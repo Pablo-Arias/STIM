@@ -454,7 +454,11 @@ def get_formant_ts_praat(audio_file):
 
 # Extract_ts_of_pitch_praat
 def Extract_ts_of_pitch_praat(Fname):
-	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run",'/Users/arias/Documents/Developement/Python/ts_pitch.praat', Fname]);
+	import subprocess
+	import pandas as pd
+	import os	
+	#out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run",'/Users/arias/Documents/Developement/Python/ts_pitch.praat', Fname]);
+	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
 	out = out.splitlines()
 
 	times = []
@@ -468,6 +472,19 @@ def Extract_ts_of_pitch_praat(Fname):
 	#print times
 	f0s = [np.nan if item == '--undefined--' else float(item) for item in f0s]
 	return times, f0s
+
+
+
+#Extract mean formant with praat
+def get_mean_formant_praat(Fname):
+	import subprocess
+	script_name=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
+
+	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
+	Title, F1, F2, F3, F4, F5 = x.splitlines()
+	return Title, float(F1), float(F2), float(F3), float(F4), float(F5)
+
+
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
