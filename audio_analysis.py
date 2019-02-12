@@ -260,22 +260,40 @@ def formant_from_audio(audio_file, nb_formants, ana_winsize=512):
 	return formants
 
 
-def get_tidy_formants(audio_file, nb_formants, ana_winsize=512):
+def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicity=False):
 	"""
 	Convert formant_from_audio data to a tidy dataframe
- 	parameters:
-		formants 	: formant data coming from the formant_from_audio function
+	parameters:
+		audio_file 	: file to anlayse
+		nb_formants : number of formants to compute and return
+		ana_winsize : window size for the LPC estimation
+		add_harmonicity: Add harmonicity values to dataframe
 	"""	
 	formants = formant_from_audio(audio_file, nb_formants, ana_winsize)
 
 	#Tidy formants
 	all_formants = pd.DataFrame()
 	for cpt in range(1, len(formants)+1):
-	    formant = formants[cpt-1]
-	    formant["Formant"] = ["F" + str(cpt) for i in range(len(formant))]
-	    all_formants = all_formants.append(formant)
+		formant = formants[cpt-1]
+		formant["Formant"] = ["F" + str(cpt) for i in range(len(formant))]
+		all_formants = all_formants.append(formant)
 
 	all_formants.index.names = ['time']
+
+	if add_harmonicity:
+		def add_harm(row, *args):
+			from bisect import bisect
+			f0times = args[0]
+			f0harm = args[1]
+			
+			formant_time = row["time"]
+			
+			index = bisect(f0times, formant_time)
+			harm = f0harm[index-1]
+			return harm
+		f0times, f0harm, _ = get_f0(audio_file = audio_file)
+		all_formants = all_formants.reset_index()
+		all_formants["harmonicity"] = all_formants.apply(add_harm, axis=1, args=(f0times, f0harm,)) 
 
 	return all_formants
 
