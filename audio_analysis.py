@@ -455,10 +455,10 @@ def get_formant_ts_praat(audio_file):
 # Extract_ts_of_pitch_praat
 def Extract_ts_of_pitch_praat(Fname):
 	import subprocess
-	import pandas as pd
 	import os	
-	#out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run",'/Users/arias/Documents/Developement/Python/ts_pitch.praat', Fname]);
+
 	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
+
 	out = out.splitlines()
 
 	times = []
