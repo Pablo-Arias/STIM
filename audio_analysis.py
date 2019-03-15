@@ -553,17 +553,20 @@ def get_mean_lpc_from_audio(audio,wait = True, nb_coefs = 45, destroy_sdif_after
 		this function only works for mono files
 	"""
 	path_and_name = os.path.basename(audio)
+	path_and_name = os.path.splitext(path_and_name)[0]
 	analysis = path_and_name + ".sdif"
 
 	# first generate an sdif analysis file 
 	generate_LPC_analysis(audio_file = audio, analysis = analysis, wait = True, nb_coefs = nb_coefs)
 	
 	# then load and mean the sdif file generated
-	return mean_matrix(analysis)
+	matrix_data =  mean_matrix(analysis)
 
 	#destroy the sdif file generated if specified by parameter
 	if destroy_sdif_after_analysis:
-		os.remove(sdif)
+		os.remove(analysis)
+
+	return matrix_data
 
 
 # ---------- get_true_env_analysis
@@ -589,13 +592,13 @@ def get_true_env_analysis(audio_file, analysis="", wait = True, f0 = "mean", des
 
 	generate_true_env_analysis(audio_file, analysis=analysis, wait = wait, f0 = f0)
 
-	mean_matrix = mean_matrix(analysis)
+	matrix_data = mean_matrix(analysis)
 
 	#destroy the sdif file generated if specified by parameter
 	if destroy_sdif_after_analysis:
 		os.remove(analysis)
 
-	return mean_matrix
+	return matrix_data
 
 # ---------- get_true_env_analysis
 def get_true_env_ts_analysis(audio_file, analysis="", wait = True, f0 = "mean", destroy_sdif_after_analysis = True):
