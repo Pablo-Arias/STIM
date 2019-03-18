@@ -117,8 +117,6 @@ def generate_tenv_formant_analysis(audio_file, analysis = "", nb_formants = 5, w
 
 	Be careful, this function works only with mono files
 	"""
-	#the version of supervp that suports -a_formant_tenv
-	super_vp_path = "/Applications/SuperVP/supervp"
 
 	if os.path.dirname(audio_file) == "":
 
