@@ -280,6 +280,7 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 
 	all_formants.index.names = ['time']
 
+	#Add harmonicity row to formant estimation
 	if add_harmonicity:
 		def add_harm(row, *args):
 			from bisect import bisect
@@ -291,6 +292,7 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 			index = bisect(f0times, formant_time)
 			harm = f0harm[index-1]
 			return harm
+
 		f0times, f0harm, _ = get_f0(audio_file = audio_file)
 		all_formants = all_formants.reset_index()
 		all_formants["harmonicity"] = all_formants.apply(add_harm, axis=1, args=(f0times, f0harm,)) 
@@ -525,7 +527,7 @@ def get_mean_tidy_formant_praat(Fname):
 
 	formant_tags = ["F"+str(i) for i in range(1, nb_formants+1)]
 	formants     = get_mean_formant_praat(Fname)
-	data = {'formant': formant_tags, "frequency": formants}
+	data = {'Formant': formant_tags, "Frequency": formants}
 
 	return pd.DataFrame.from_dict(data)
 
