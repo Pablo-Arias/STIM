@@ -32,7 +32,7 @@ import sys
 sys.path.append('/Users/arias/Documents/Developement/Python/')
 from conversions import lin2db, db2lin
 
-def wav_to_mono(source, target):
+def wav_to_mono(source, target, enc='pcm24'):
 	"""
 	source : source audio file
 	target : target audio file
@@ -40,22 +40,17 @@ def wav_to_mono(source, target):
 	f = Sndfile(source, 'r')
 	if f.channels != 1:
 		#To mono
-		x, fs, enc = wavread(source)
-		f.channels
-		wavwrite(x[:,0], target, fs, enc='pcm24')
+		x, fs, _ = wavread(source)
+		wavwrite(x[:,0], target, fs, enc=enc)
 
 
-def mono_to_stereo(source, target):
+def mono_to_stereo(source, target, enc='pcm24'):
 	import numpy as np
 	f = Sndfile(source, 'r')
 	if f.channels == 1:
-		
-		#To mono
-		x, fs, enc = wavread(source)
-		print "here"
-		print type(x)
-		print type(np.array([x, x]))
-		wavwrite(np.array([x, x]).transpose(), target, fs, enc='pcm24')
+		#To stereo
+		x, fs, _ = wavread(source)
+		wavwrite(np.array([x, x]).transpose(), target, fs, enc=enc)
 
 
 
