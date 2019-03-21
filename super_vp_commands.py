@@ -80,9 +80,8 @@ def generate_formant_analysis(audio_file, analysis = "", nb_formants = 5, wait =
 	Be careful, this function works only with mono files
 	"""
 
-	from scikits.audiolab import wavread 
-	_, fs, _ 		= wavread(str(audio_file))
-	ana_winsize_s = str(float(ana_winsize)/fs)
+	nb_formants = str(nb_formants) 
+	ana_winsize = str(ana_winsize)
 
 	if analysis =="":
 		if os.path.dirname(audio_file) == "":
@@ -95,7 +94,7 @@ def generate_formant_analysis(audio_file, analysis = "", nb_formants = 5, wait =
 			file_tag = os.path.splitext(file_tag)[0]
 			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
 
-	parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+str(nb_formants)+" 45  -Np0 -M"+ana_winsize_s+"s -oversamp 8 -Whanning  -OS1 "+ analysis
+	parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+nb_formants+" 45  -Np0 -M"+ana_winsize+" -oversamp 8 -Whanning  -OS1 "+ analysis
 	# parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+str(nb_formants)+" 45  -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS1 "+ analysis
 	# parameters 	=  "-t -ns -S"+audio_file+" -Aformant_tenv n"+str(nb_formants)+" / -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS0 "+ analysis
 	cmd 		= super_vp_path + " " + parameters
@@ -155,11 +154,10 @@ def generate_tenv_formant_analysis(audio_file, analysis = "", nb_formants = 5, w
 			file_tag = os.path.splitext(file_tag)[0]
 			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
 
-	from scikits.audiolab import wavread 
-	_, fs, _ 		= wavread(str(audio_file))
-	ana_winsize_s = str(float(ana_winsize)/fs)	
+	nb_formants = str(nb_formants)
+	ana_winsize = str(ana_winsize)
 
-	parameters 	=  "-t -ns -S"+audio_file+" -Atenv +"+str(f0)+"Hz -F0 "+f0_analysis+" -Aformant_tenv n"+str(nb_formants)+" +2,1 -Np0 -M"+ana_winsize_s+"s -oversamp 8 -Whanning  -OS1 "+ analysis
+	parameters 	=  "-t -ns -S"+audio_file+" -Atenv +"+str(f0)+"Hz -F0 "+f0_analysis+" -Aformant_tenv n"+nb_formants+" +2,1 -Np0 -M"+ana_winsize+" -oversamp 8 -Whanning  -OS1 "+ analysis
 	#parameters 	=  "-t -ns  -S"+audio_file+" -Atenv +"+str(f0)+"Hz -F0 "+f0_analysis+" -Np2 -M0.0907029509544373s -oversamp 16 -Whanning -OS1 "+analysis
 
 
