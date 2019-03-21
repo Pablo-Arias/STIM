@@ -267,12 +267,16 @@ def transpose_sound(source_sound, nb_cents, target_sound):
 
 
 # ---------- freq_warp
-def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=25 ,wait = True, warp_method="lpc", freq_warp_oversampling = 64):
+def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=25 ,wait = True, warp_method="lpc", win_oversampling = 64, fft_oversampling=2):
 	"""
-	source_sound : audio source file
-	target_sound : audio file to be created
-	warpfile 	 : file to do the warp.
-	warp_method  : warp with the lpc or the true envelope
+	source_sound     : audio source file
+	target_sound     : audio file to be created
+	warpfile 	     : file to do the warp.
+	freq_warp_ws     : size of the individual signal segments that will be treated by SuperVP
+	lpc_order        : order for the lpc analysis
+	warp_method      : warp with the lpc or the true envelope
+	fft_oversampling : frequency oversampling defined as an exponent that changes the FFT size (FFTsize=freq_warp_ws*2^fft_oversampling)
+	win_oversampling : window oversampling or minimum overlap  of analysis and  synthesis windows (hopsize=freq_warp_ws/win_oversampling). Previously called 'freq_warp_oversampling'
 	"""
 
 	if os.path.dirname(source_sound) == "":
@@ -285,18 +289,21 @@ def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=
 		file_tag = os.path.splitext(file_tag)[0]
 		f0_analysis = os.path.dirname(source_sound)+ "/" + file_tag + "f0.sdif"
 
-	freq_warp_ws = str(freq_warp_ws)
-	lpc_order    = str(lpc_order)
+	freq_warp_ws     = str(freq_warp_ws)
+	lpc_order        = str(lpc_order)
+	fft_oversampling = str(int(fft_oversampling))
+	win_oversampling = str(win_oversampling)
 
 	#see super-vp help to understand the parameters
 	
 	if "lpc" == warp_method:
-		#parameters =  "-t -Afft -M512 -N512 -Np2 -oversamp 64 -f0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
-		parameters =  "-t -Afft "+lpc_order+" -M"+str(freq_warp_ws)+" -N"+freq_warp_ws+" -Np2 -oversamp "+str(freq_warp_oversampling) +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
+		# parameters =  "-t -Afft -M512 -N512 -Np2 -oversamp 64 -f0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound # warping with manual -N window size and redundant -Np
+		# parameters =  "-t -Afft "+lpc_order+" -M"+str(freq_warp_ws)+" -N"+freq_warp_ws+" -Np2 -oversamp "+str(win_oversampling) +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound # warping before 'win_oversampling' change
+		parameters =  "-t -Afft "+lpc_order+" -M"+freq_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
 	
 	elif "t_env" == warp_method:
 		generate_f0_analysis( source_sound, f0_analysis)
-		parameters =  "-t -Afft -atenv -F0 "+f0_analysis+" -M"+freq_warp_ws+" -N"+freq_warp_ws+" -Np2 -oversamp "+str(freq_warp_oversampling)+" -F0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
+		parameters =  "-t -Afft -atenv -F0 "+f0_analysis+" -M"+freq_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling+" -F0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
 	else:
 		print "wrong warping method specified"
 	

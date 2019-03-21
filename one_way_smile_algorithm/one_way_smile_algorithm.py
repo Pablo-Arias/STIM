@@ -364,7 +364,8 @@ def transform_to_smile(audio_file
                             , freq_warp_ws             = 512
                             , lpc_order                = 25
                             , warp_method              = "lpc"
-                            , freq_warp_oversampling   = 64
+                            , fft_oversampling         = 2
+                            , win_oversampling         = 64
                             , ana_winsize              = 512
                         ):
     """
@@ -386,7 +387,8 @@ def transform_to_smile(audio_file
         warp_method            : this parameter is either "t_env" or "lpc", 
                                   and specifies what enevelope estimation to use in the warping stage
                                   the default is lpc
-        freq_warp_oversampling : Oversampling of the frequency warping
+        fft_oversampling       : frequency oversampling defined as an exponent that changes the FFT size (FFTsize=freq_warp_ws*2^fft_oversampling)
+        win_oversampling       : window oversampling or minimum overlap  of analysis and  synthesis windows (hopsize=freq_warp_ws/win_oversampling) Previously called 'freq_warp_oversampling'
         ana_winsize            : svp formant analysis window size
 
     output : 
@@ -449,7 +451,7 @@ def transform_to_smile(audio_file
     warp_file = generate_warping_file(features_df, audio_file, alpha)
 
 	#frequency warping
-    freq_warp(audio_file, warped_file, warp_file, freq_warp_ws = freq_warp_ws,lpc_order=lpc_order, warp_method=warp_method ,wait = True, freq_warp_oversampling= freq_warp_oversampling)
+    freq_warp(audio_file, warped_file, warp_file, freq_warp_ws = freq_warp_ws, lpc_order=lpc_order, warp_method=warp_method, wait = True, win_oversampling= win_oversampling)
 
 	#dynamic filter
     if do_dynamic_filter:
