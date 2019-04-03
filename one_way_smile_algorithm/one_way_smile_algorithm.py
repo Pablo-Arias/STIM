@@ -418,11 +418,12 @@ def transform_to_smile(audio_file
         from audio_analysis import get_formant_ts_praat
         freqs_df, bws_df = get_formant_ts_praat(audio_file)
         features_df = freqs_df.reset_index().set_index("time")
+        features_df.columns = [u'Formant', u'frequency'] #rename columns for compatibility
     else:
         print "formant_estimation should be either lpc, t_env or praat"
 
+    
     features_df = features_df[["frequency", "Formant"]].reset_index()
-
     features_df = features_df.pivot(index='time', columns='Formant', values='frequency')
 
     #generate f0 analysis

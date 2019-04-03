@@ -95,8 +95,8 @@ def generate_formant_analysis(audio_file, analysis = "", nb_formants = 5, wait =
 			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
 
 	parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+nb_formants+" 45  -Np0 -M"+ana_winsize+" -oversamp 8 -Whanning  -OS1 "+ analysis
-	# parameters 	=  "-t -ns -S"+audio_file+" -Aformant_lpc n"+str(nb_formants)+" 45  -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS1 "+ analysis
-	# parameters 	=  "-t -ns -S"+audio_file+" -Aformant_tenv n"+str(nb_formants)+" / -Np0 -M0.0111100003123283s -oversamp 8 -Whanning  -OS0 "+ analysis
+
+
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)
