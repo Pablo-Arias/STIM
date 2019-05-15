@@ -681,36 +681,29 @@ def get_spectrum(file, window_size = 256, noverlap = 0, plot_spec = False, plot_
 
 
 # ---------- get_f0
-def get_f0(audio_file, analysis ="",wait = True, destroy_sdif_after_analysis = True):
+def get_f0(audio_file, f0_analysis ="", wait = True, destroy_sdif_after_analysis = True):
 	"""
     Get f0
     	audio_file : file to analyse
 
     return : 
     	f0times: time tags
-    	f0harm: signal harmonicity
-    	f0val: fundamental frequency estimation in Hz
-
+    	f0harm:  signal harmonicity
+    	f0val:   fundamental frequency estimation in Hz
     """
-	if os.path.dirname(audio_file) == "":
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
-		f0_analysis = file_tag + "f0.sdif" 
-		if analysis == "":
-			analysis = file_tag + ".sdif" 
-	else:
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
-		f0_analysis = os.path.dirname(audio_file)+ "/" + file_tag + "f0.sdif"
-	
-	from super_vp_commands import generate_f0_analysis
-	generate_f0_analysis( audio_file, f0_analysis)
 
+	if f0_analysis == "":
+		file_tag = os.path.basename(audio_file)
+		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = file_tag + "_f0.sdif"
+		f0_analysis = os.path.join(os.path.dirname(audio_file), file_tag)
+		 
+	from super_vp_commands import generate_f0_analysis
+	generate_f0_analysis(audio_file, f0_analysis)
 	
 	from parse_sdif import get_f0_info
 	f0times, f0harm, f0val = get_f0_info(f0_analysis)
 	
-
 	#destroy the sdif file generated if specified by parameter
 	if destroy_sdif_after_analysis:
 		os.remove(f0_analysis)
