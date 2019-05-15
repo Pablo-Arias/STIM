@@ -710,7 +710,29 @@ def get_f0(audio_file, f0_analysis ="", wait = True, destroy_sdif_after_analysis
 
 	return f0times, f0harm, f0val
 
-
+def get_mean_f0(audio_file, max_harm=0.5, plot=False):
+	"""
+	Function to get mean F0 of an audio file as a float in Hz
+	INPUT
+		audio_file : wav file to analyse
+		max_harm   : harmonicity threshold under which values will be replaced by NaN
+		plot       : plots F0 in function of time
+	returns :
+		Mean F0 in Hz (float)
+	"""
+	import pandas as pd
+	import matplotlib.pylab as plt
+	f0times,f0harm,f0val = get_f0(audio_file = audio_file)
+	f0_audio = pd.DataFrame()
+	f0_audio["harm"] = f0harm
+	f0_audio["f0val"] = f0val
+	f0_audio["time"] = f0times
+	f0_audio[f0_audio.harm < max_harm] = np.nan
+	if plot:
+		plt.plot(f0_audio.time, f0_audio.f0val)
+		plt.xlabel('time [s]')
+		plt.ylabel('F0 [Hz]')
+	return f0_audio.f0val.mean()
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
