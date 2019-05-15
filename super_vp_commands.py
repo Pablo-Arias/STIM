@@ -24,24 +24,22 @@ from super_vp_path import get_super_vp_path
 super_vp_path = get_super_vp_path()
 
 # ---------- generate_f0_analysis
-def generate_f0_analysis(audio_file, analysis ="", wait = True):
+def generate_f0_analysis(audio_file, analysis ="", f_min =100, f_max=1500, F=3000, wait = True):
 	"""
 	file : file to anlayse
 	analysis : sdif file to generate, if not defined analysis will be saved in the same path of the audio file, with the same name but with an sdif extension.
+	f_min : Minimum frequency value for pitch analysis in Hz
+	f_max : Maximum frequency value for pitch analysis in Hz
+	F     : Maximum frequency in spectrum in Hz
 	wait : wait until the analysis is finished before exit
 	"""
 	if analysis =="":
-		if os.path.dirname(audio_file) == "":
+		file_tag = os.path.basename(audio_file)
+		file_tag = os.path.splitext(file_tag)[0]
+		analysis = os.path.join(os.path.dirname(audio_file), file_tag + ".sdif")
 
-			file_tag = os.path.basename(audio_file)
-			file_tag = os.path.splitext(file_tag)[0]
-			analysis = file_tag + ".sdif" 
-		else:
-			file_tag = os.path.basename(audio_file)
-			file_tag = os.path.splitext(file_tag)[0]
-			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
-
-	parameters  = "-t -ns  -S"+audio_file+" -Af0 \"fm100, fM1500, F3000, sn120, smooth3 ,Cdem, M0.26 , E0.14\" -Np2 -M0.0464299991726875s -oversamp 8 -Wblackman  -Of4 " + analysis
+	# parameters  = "-t -ns  -S"+audio_file+" -Af0 \"fm100, fM1500, F3000, sn120, smooth3 ,Cdem, M0.26 , E0.14\" -Np2 -M0.0464299991726875s -oversamp 8 -Wblackman  -Of4 " + analysis
+	parameters  = "-t -ns  -S"+audio_file+" -Af0 \"fm"+str(f_min)+", fM"+str(f_max)+", F"+str(F)+", sn120, smooth3 ,Cdem, M0.26 , E0.14\" -Np2 -M0.0464299991726875s -oversamp 8 -Wblackman  -Of4 " + analysis
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)
