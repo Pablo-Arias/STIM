@@ -452,7 +452,7 @@ def transform_to_smile(audio_file
     warp_file = generate_warping_file(features_df, audio_file, alpha)
 
 	#frequency warping
-    freq_warp(audio_file, warped_file, warp_file, freq_warp_ws = freq_warp_ws, lpc_order=lpc_order, warp_method=warp_method, wait = True, win_oversampling= win_oversampling)
+    freq_warp(audio_file, warped_file, warp_file, freq_warp_ws = freq_warp_ws, lpc_order=lpc_order, warp_method=warp_method, wait = True, fft_oversampling = fft_oversampling, win_oversampling= win_oversampling)
 
 	#dynamic filter
     if do_dynamic_filter:

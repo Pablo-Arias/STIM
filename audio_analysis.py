@@ -535,6 +535,8 @@ def get_mean_formant_praat(Fname):
 	script_name=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
 	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
 	Title, F1, F2, F3, F4, F5 = x.splitlines()
+
+	
 	return float(F1), float(F2), float(F3), float(F4), float(F5)
 
 
