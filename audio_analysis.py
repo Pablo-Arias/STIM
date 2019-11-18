@@ -19,6 +19,7 @@ from parse_sdif import mean_matrix, mean_formant_from_sdif, formant_from_sdif
 from conversions import lin2db, db2lin
 import os
 import pandas as pd
+import glob
 
 
 # --------------------------------------------------------------------#
@@ -428,6 +429,7 @@ def Extract_ts_of_pitch_praat(Fname):
 	"""
 	import subprocess
 	import os	
+	Fname = os.path.abspath(Fname)
 
 	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
 
@@ -444,6 +446,28 @@ def Extract_ts_of_pitch_praat(Fname):
 	#print times
 	f0s = [np.nan if item == '--undefined--' else float(item) for item in f0s]
 	return times, f0s
+
+def get_mean_pitch_praat(Fname):
+	times, f0s = Extract_ts_of_pitch_praat(Fname)
+	return np.nanmean(f0s)
+
+def get_formant_disperssion(Fname):
+	"""Compute and return Formant Dispersion
+	"""
+
+	df, db = get_formant_ts_praat(file)
+	df = df.reset_index().groupby(["Formant"]).mean().reset_index()
+	F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
+	F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
+	F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
+	F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
+	F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
+
+	#compute formant_dispersion
+	fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 5
+
+	return fd
+
 
 
 #get formant time series with praat
@@ -506,6 +530,7 @@ def get_mean_formant_praat(Fname):
 	"""
 	import subprocess
 	import os
+	Fname = os.path.abspath(Fname)
 
 	script_name=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
 	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
@@ -533,7 +558,52 @@ def get_mean_tidy_formant_praat(Fname):
 
 
 	
+def analyse_audio_folder(source_folder):
+	"""
+		Analyse all the sounds from a folder and returns a data frame with key vocal features
+	"""
+	df_stimuli = pd.DataFrame()
 
+	for file in glob.glob(source_folder+"/*.wav"):
+		#handle name of file
+		base = os.path.basename(file)
+		base = os.path.splitext(base)[0]
+
+		#Get formant frequencies
+		#F1, F2, F3, F4, F5 = get_mean_formant_praat(os.path.abspath(file))
+		df, db = get_formant_ts_praat(file)
+		df = df.reset_index().groupby(["Formant"]).mean().reset_index()
+		F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
+		F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
+		F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
+		F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
+		F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
+
+		#get mean pitch
+		pitch_mean = get_mean_pitch_praat(os.path.abspath(file))
+
+		#compute formant_dispersion
+		fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 5
+
+		#compute mean centroid
+		centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = -50, window_size = 512)
+
+		#create dataframes and append
+		aux_df = pd.DataFrame({"File"  : base
+		               			, "CGS" : centroid
+		               			, "F1" : F1
+		               			, "F2" : F2
+		               			, "F3" : F3
+		               			, "F4" : F4
+		               			, "F5" : F5
+		               			, "pitch_mean" : pitch_mean
+		               			, "formant_disp" : fd
+		               			, "sound_duration" : get_sound_duration(file)
+		            }, index = [0]
+		            )   
+
+		df_stimuli = df_stimuli.append(aux_df)	
+	return df_stimuli
 
 
 # --------------------------------------------------------------------#
