@@ -451,27 +451,36 @@ def get_mean_pitch_praat(Fname):
 	times, f0s = Extract_ts_of_pitch_praat(Fname)
 	return np.nanmean(f0s)
 
-def get_formant_disperssion(Fname):
+def get_formant_dispersion_svp(Fname, nb_formants=5, harmonicity_threshold = None):
 	"""Compute and return Formant Dispersion
 	"""
 
-	df, db = get_formant_ts_praat(file)
-	df = df.reset_index().groupby(["Formant"]).mean().reset_index()
-	F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
-	F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
-	F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
-	F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
-	F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
+	#compute formant with harmonicity if need
+	if not harmonicity_threshold:
+		df_analysis = get_tidy_formants(Fname, nb_formants=nb_formants, ana_winsize=2048, add_harmonicity=False)
+	else:
+		df_analysis = get_tidy_formants(Fname, nb_formants=nb_formants, ana_winsize=2048, add_harmonicity=True)
+		df_analysis = df_analysis.loc[df_analysis["harmonicity"] > harmonicity_threshold]
 
-	#compute formant_dispersion
-	fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 5
+	#compute formant means
+	df_analysis = df_analysis.groupby(["Formant"]).mean().reset_index()
+	means_formants = []
+	for formant in range(1, nb_formants+1):
+	    formant_val = df_analysis.loc[df_analysis["Formant"] == "F"+str(formant)]["Frequency"].values[0]
+	    means_formants.append(formant_val)
 
-	return fd
+	#compute formant dispersion
+	formant_disp = 0
+	for i in range(1, len(means_formants)):
+	    formant_disp += means_formants[i] - means_formants[i-1]
+	formant_disp = formant_disp/nb_formants
+
+	return formant_disp
 
 
 
 #get formant time series with praat
-def get_formant_ts_praat(audio_file):
+def get_formant_ts_praat(audio_file, add_harmonicity=False):
 	"""
 		parameters:
 		audio_file 	: mono audio file PATH to be analysed, you have to give the ABSOLUTE PATH
@@ -519,8 +528,52 @@ def get_formant_ts_praat(audio_file):
 	bws_df = bws_df.stack().to_frame("Bandwidth")
 	bws_df.index = bws_df.index.rename(["time", "Formant"])
 
+	#Add harmonicity row to formant estimation with super vp
+	if add_harmonicity:
+	    def add_harm(row, *args):
+	        from bisect import bisect
+	        f0times = args[0]
+	        f0harm = args[1]
+
+	        formant_time = row["time"]
+
+	        index = bisect(f0times, formant_time)
+	        harm = f0harm[index-1]
+	        return harm
+
+	    f0times, f0harm, _ = get_f0(audio_file = file_name)
+
+	    #Add harmonicity to bandwidth
+	    bws_df = bws_df.reset_index()
+	    bws_df["harmonicity"] = bws_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
+	    bws_df = bws_df.set_index("time")
+
+	    #Add harmonicity to frequency
+	    freqs_df = freqs_df.reset_index()
+	    freqs_df["harmonicity"] = freqs_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
+	    freqs_df = freqs_df.set_index("time")
+
+	
+
+
 	return freqs_df, bws_df
 
+def get_mean_formant_harmonicity(audio_file, harm_threshold=None):
+	"""
+		get mean formant with praat, but exclucding all values under a certain harmonicity threshold 
+		(if harm_threshold is defined, if None, just compute mean of time series)
+	"""
+	if not harm_threshold:
+		#Get mean formant
+		freqs_df, bws_df = get_formant_ts_praat(audio_file, add_harmonicity=False)
+	else:
+		freqs_df, bws_df = get_formant_ts_praat(audio_file, add_harmonicity=True)
+		freqs_df = freqs_df.loc[freqs_df["harmonicity"]>harm_threshold]
+		bws_df = bws_df.loc[bws_df["harmonicity"]>harm_threshold]
+		
+
+	bws_df 	 = bws_df.reset_index().groupby(["Formant"]).mean().reset_index()
+	freqs_df = freqs_df.reset_index().groupby(["Formant"]).mean().reset_index()
 
 #Extract mean formant with praat
 def get_mean_formant_praat(Fname):
@@ -536,7 +589,7 @@ def get_mean_formant_praat(Fname):
 	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
 	Title, F1, F2, F3, F4, F5 = x.splitlines()
 
-	
+
 	return float(F1), float(F2), float(F3), float(F4), float(F5)
 
 
@@ -558,9 +611,17 @@ def get_mean_tidy_formant_praat(Fname):
 
 	return pd.DataFrame.from_dict(data)
 
+def get_mean_formant_praat_harmonicity():
+	#df, db = get_formant_ts_praat(file)
+	#df = df.reset_index().groupby(["Formant"]).mean().reset_index()
+	#F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
+	#F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
+	#F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
+	#F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
+	#F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
 
 	
-def analyse_audio_folder(source_folder):
+def analyse_audio_folder(source_folder, harmonicity_threshold = None, formant_dispersion_with_svp=True):
 	"""
 		Analyse all the sounds from a folder and returns a data frame with key vocal features
 	"""
@@ -572,20 +633,16 @@ def analyse_audio_folder(source_folder):
 		base = os.path.splitext(base)[0]
 
 		#Get formant frequencies
-		#F1, F2, F3, F4, F5 = get_mean_formant_praat(os.path.abspath(file))
-		df, db = get_formant_ts_praat(file)
-		df = df.reset_index().groupby(["Formant"]).mean().reset_index()
-		F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
-		F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
-		F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
-		F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
-		F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
+		F1, F2, F3, F4, F5 = get_mean_formant_praat(os.path.abspath(file))
 
 		#get mean pitch
 		pitch_mean = get_mean_pitch_praat(os.path.abspath(file))
 
 		#compute formant_dispersion
-		fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 5
+		if formant_dispersion_with_svp:
+			fd = get_formant_dispersion_svp(file, harmonicity_threshold=harmonicity_threshold)
+		else:
+			fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 5
 
 		#compute mean centroid
 		centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = -50, window_size = 512)
