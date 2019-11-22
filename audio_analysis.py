@@ -742,37 +742,55 @@ def analyse_audio_folder(source_folder
 
 	return df_stimuli
 
-def get_formant_dispersion(Fname, harmonicity_threshold = None):
+def get_formant_dispersion(Fname, harmonicity_threshold = None, nb_formants_fd=5, nb_formants=5):
 	"""
+	Inputs:
+		Fname 				  : name of the file to use
+		harmonicity_threshold : harmonicty threshold to exclude parts of the sound whenc omputing mean formant frequency 
+								(between 0 and 1 : 1 is very harmonic, 0 is unharmonic)
+
+		nb_formants_fd  : nuùmber of formants to use in the computation of formant dispersion
+		nb_formants 	: number of formants to estimate
+
+	Output:
+		Formant dispersion
+	
 	Compute and return formant dispersion Following Fitch 1997 JASA Formula
 
 	"""
+	
 	#Get formant frequencies
-	if harmonicity_threshold:
-		df, db = get_mean_formant_praat_harmonicity(Fname, harmonicity_threshold = harmonicity_threshold)
-		F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
-		F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
-		F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
-		F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
-		F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
+	df, db = get_mean_formant_praat_harmonicity(Fname, harmonicity_threshold = harmonicity_threshold, nb_formants= nb_formants)
+	formants = df["Frequency"].values
 
-	else:
-		F1, F2, F3, F4, F5 = get_mean_formant_praat(os.path.abspath(Fname))
+	#compute formant dispersion
+	fd = 0
+	for i in range(1, nb_formants_fd):
+		fd = fd + formants[i] - formants[i-1]
+	fd = fd / (nb_formants_fd -1)
 
-
-	#compute formant_dispersion
-	fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 4
-
+	#return formant dispersion
 	return fd
 
 def estimate_vtl(Fname, harmonicity_threshold=None, speed_of_sound=335):
 	"""
 	Estimate vocal tract length following the formula in Fitch 1997
-	the speed_of_sound is usually ~335 m/s, and L is the vocal tract length in m.
-	"""
+	The speed_of_sound is usually ~335 m/s, and L is the vocal tract length in m.
 	
+	Inputs:
+		Fname 				  : name of the audio file to analyse (only works with mono files)
+		harmonicity_threshold : harmonicty threshold to exclude parts of the sound whenc omputing mean formant frequency 
+								(between 0 and 1 : 1 is very harmonic, 0 is unharmonic)
+
+		speed_of_sound 		  : speed of sound in m.s-1 (in this case the output will be in meters)
+	Outputs:
+		vtl : estimated vocal tract length
+
+	"""
+	#compute formant dispersion
 	fd = get_formant_dispersion(Fname=Fname, harmonicity_threshold=harmonicity_threshold)
 
+	#estimate vocal tract length
 	vtl = speed_of_sound/(2*fd)
 
 	return vtl
@@ -786,7 +804,7 @@ def estimate_vtl(Fname, harmonicity_threshold=None, speed_of_sound=335):
 # --------------------------------------------------------------------#
 
 # ---------- get_mean_lpc_from_audio
-def get_mean_lpc_from_audio(audio,wait = True, nb_coefs = 45, destroy_sdif_after_analysis = True):
+def get_mean_lpc_from_audio(audio, wait = True, nb_coefs = 45, destroy_sdif_after_analysis = True):
  	"""
  	parameters:
 		audio 		: file to anlayse
@@ -796,8 +814,7 @@ def get_mean_lpc_from_audio(audio,wait = True, nb_coefs = 45, destroy_sdif_after
 	warning : 
 		this function only works for mono files
 	"""
-	path_and_name = os.path.basename(audio)
-	path_and_name = os.path.splitext(path_and_name)[0]
+	path_and_name =  = get_file_without_path(audio)
 	analysis = path_and_name + ".sdif"
 
 	# first generate an sdif analysis file 
@@ -823,12 +840,10 @@ def get_true_env_analysis(audio_file, analysis="", wait = True, f0 = "mean", des
     """
 	if analysis== "":
 		if os.path.dirname(audio_file) == "":
-			file_tag = os.path.basename(audio_file)
-			file_tag = os.path.splitext(file_tag)[0]
+			file_tag = get_file_without_path(audio_file)
 			analysis = file_tag + ".sdif" 
 		else:
-			file_tag = os.path.basename(audio_file)
-			file_tag = os.path.splitext(file_tag)[0]
+			file_tag = get_file_without_path(audio_file)
 			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
 
 	from parse_sdif import mean_matrix
@@ -851,12 +866,10 @@ def get_true_env_ts_analysis(audio_file, analysis="", wait = True, f0 = "mean", 
     """
 	if analysis== "":
 		if os.path.dirname(audio_file) == "":
-			file_tag = os.path.basename(audio_file)
-			file_tag = os.path.splitext(file_tag)[0]
+			file_tag = get_file_without_path(audio_file)
 			analysis = file_tag + ".sdif" 
 		else:
-			file_tag = os.path.basename(audio_file)
-			file_tag = os.path.splitext(file_tag)[0]
+			file_tag = get_file_without_path(audio_file)
 			analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".sdif"
 
 	from parse_sdif import get_matrix_values
@@ -935,14 +948,12 @@ def get_f0(audio_file, analysis ="",wait = True, destroy_sdif_after_analysis = T
 
     """
 	if os.path.dirname(audio_file) == "":
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = get_file_without_path(audio_file)
 		f0_analysis = file_tag + "f0.sdif" 
 		if analysis == "":
 			analysis = file_tag + ".sdif" 
 	else:
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = get_file_without_path(audio_file)
 		f0_analysis = os.path.dirname(audio_file)+ "/" + file_tag + "f0.sdif"
 	
 	from super_vp_commands import generate_f0_analysis
