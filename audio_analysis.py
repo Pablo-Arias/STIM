@@ -16,11 +16,11 @@
 from scikits.audiolab import aiffwrite, aiffread, wavwrite, wavread, Sndfile, oggread  # scipy.io.wavfile can't read 24-bit WAV
 from super_vp_commands import generate_LPC_analysis
 from parse_sdif import mean_matrix, mean_formant_from_sdif, formant_from_sdif
-from conversions import lin2db, db2lin
+from conversions import lin2db, db2lin, get_file_without_path
 import os
 import pandas as pd
 import glob
-
+import numpy as np
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -42,23 +42,22 @@ def get_spectral_centroid(audio_file, window_size = 256, noverlap = 0, plot_spec
 	warning : 
 		this function only works for mono files
 	"""	
+	#imports
 	import glob
 	from scikits.audiolab import wavread, aiffread
 	from scipy import signal
 	
+	#try to read audofile in different formats
 	try:
 		sound_in, fs, enc = aiffread(audio_file)
 	except ValueError:
 		sound_in, fs, enc = wavread(audio_file)
-	
-		
 	
 	#compute gaussian spectrogram
 	f, t, Sxx = signal.spectrogram(sound_in       , fs , nperseg = window_size 
 	                               , noverlap = noverlap , scaling ='spectrum'
 	                               , mode = 'magnitude'
 	                              )
-
 
 	#plot specgram
 	if plot_specgram:
@@ -79,32 +78,32 @@ def get_spectral_centroid(audio_file, window_size = 256, noverlap = 0, plot_spec
 
 def get_mean_spectral_centroid_when_sound(audio_file, RMS_threshold = -55, window_size = 512):
 	"""
-	Get spectral centroid of audio file only when there is sound and mean across these regions
+	Get spectral centroid of audio file only when signal level is above amplitude threshold, and average centroid across these regions
 
- 	parameters:
+ 	Parameters:
 		audio_file 	: file to anlayse
 		RMS_threshold : min value of RMS to know if there is sound
 		window_size : window_size for the RMS compute
 	
 		returns : spectral centroid when sound
 	
-	warning : 
+	Warning : 
 		this function only works for mono files
 	"""	
 	from bisect import bisect_left
 
 	t, centroid_list = get_spectral_centroid(audio_file, window_size = window_size, noverlap = 0, plot_specgram = False)
-	intervals = get_intervals_of_sound(audio_file, RMS_threshold = RMS_threshold, window_size = window_size)
+	intervals 		 = get_intervals_of_sound(audio_file, RMS_threshold = RMS_threshold, window_size = window_size)
 
 	centroid_means = []
 	for interval in intervals:
 		begin = bisect_left(t, interval[0])
-		end = bisect_left(t, interval[1])
+		end   = bisect_left(t, interval[1])
 
 		local_mean = np.nanmean(centroid_list[begin:end])
 		centroid_means.append(local_mean)
 
-	return np.mean(centroid_means)
+	return np.nanmean(centroid_means)
 
 
 def get_intervals_of_sound(audio_file, RMS_threshold = -50, window_size = 512):
@@ -181,8 +180,8 @@ def get_mean_spectral_centroid(audio_file, window_size = 256, noverlap = 0):
 def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0, plot_specgram = False):
 	"""
  	parameters:
-		audio_file 	: file to anlayse
-		window_size : window size for FFT computing
+		audio_file 	  : file to anlayse
+		window_size   : window size for FFT computing
 		plot_specgram : Do youw ant to plot specgram of analysis?
 
 		returns : time series with the spectral centroid and the time
@@ -198,7 +197,6 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 		sound_in, fs, enc = aiffread(audio_file)
 	except ValueError:
 		sound_in, fs, enc = wavread(audio_file)
-
 
 	#compute gaussian spectrogram
 	f, t, Sxx = signal.spectrogram(sound_in       , fs , nperseg = window_size 
@@ -224,10 +222,47 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 	    
 	return t, centroid_list
 
+# Extract_ts_of_pitch_praat
+def Extract_ts_of_pitch_praat(Fname):
+	"""
+		Extract pitch time series using praat for the file Fname
+
+		Fname : input file name
+	"""
+	import subprocess
+	import os	
+	Fname = os.path.abspath(Fname)
+
+	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
+
+	out = out.splitlines()
+
+	times = []
+	f0s = []
+
+	for line in out:
+		line = line.split()
+		times.append(line[0])
+		f0s.append(line[1])
+
+	#print times
+	f0s = [np.nan if item == '--undefined--' else float(item) for item in f0s]
+	return times, f0s
+
+def get_mean_pitch_praat(Fname):
+	"""
+		Extract mean pitch using praat for the file Fname
+		
+		Input: 
+			Fname : input file name
+	"""	
+	times, f0s = Extract_ts_of_pitch_praat(Fname)
+	return np.nanmean(f0s)	
+
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
-# ----------------- Formants
-# ----------------- 
+# ----------------- 		All sort of 		----------------------#
+# ----------------- Formant related functions	----------------------#
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 def formant_from_audio(audio_file, nb_formants, ana_winsize=512):
@@ -243,15 +278,15 @@ def formant_from_audio(audio_file, nb_formants, ana_winsize=512):
 		this function only works for mono files
 	"""
 
+	#handle paths to create sdif analysis file
 	if os.path.dirname(audio_file) == "":
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = get_file_without_path(audio_file)
 		formant_analysis = file_tag + "formant.sdif" 
 	else:
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = get_file_without_path(audio_file)
 		formant_analysis = os.path.dirname(audio_file)+ "/" + file_tag + "formant.sdif"
 
+	#generate svp sdif analysis and then read formants from sdif
 	from super_vp_commands import generate_formant_analysis
 	generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants, ana_winsize = ana_winsize)
 	formants = formant_from_sdif(formant_analysis)
@@ -272,7 +307,7 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 	"""	
 	formants = formant_from_audio(audio_file, nb_formants, ana_winsize)
 
-	#Tidy formants
+	#tidy up formants
 	all_formants = pd.DataFrame()
 	for cpt in range(1, len(formants)+1):
 		formant = formants[cpt-1]
@@ -298,6 +333,7 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 		all_formants = all_formants.reset_index()
 		all_formants["harmonicity"] = all_formants.apply(add_harm, axis=1, args=(f0times, f0harm,)) 
 
+	#return formants
 	return all_formants
 
 
@@ -314,27 +350,28 @@ def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True, ana_winsi
 	warning : 
 		this function only works for mono files
 	"""
+
+	#Handle paths to create sdif analysis file
 	formant_tag = "_formant.sdif" 
 	if os.path.dirname(audio_file) == "":
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = get_file_without_path(audio_file)
 		formant_analysis = file_tag + formant_tag
+
 	else:
-		file_tag = os.path.basename(audio_file)
-		file_tag = os.path.splitext(file_tag)[0]
+		file_tag = get_file_without_path(audio_file)
 		formant_analysis = os.path.dirname(audio_file)+ "/" + file_tag + formant_tag
 
+	#Generate sdif analysis file
 	from super_vp_commands import generate_formant_analysis, generate_tenv_formant_analysis
-	
 	if use_t_env:
 		generate_tenv_formant_analysis(audio_file, analysis = formant_analysis, nb_formants = 5, wait = True, ana_winsize = ana_winsize)
 	else:
 		generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants, ana_winsize = ana_winsize)
 
+	#Get mean formant from sdif analysis file
 	mean_formants = mean_formant_from_sdif(formant_analysis)
 	
-	#os.remove(formant_analysis)
-	
+	#Return mean formants
 	return mean_formants
 
 
@@ -352,7 +389,7 @@ def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", de
 	import pandas as pd
 	from super_vp_commands import generate_formant_analysis, generate_tenv_formant_analysis
 
-	#do formant analysis
+	#Perform formant analysis either with lpc or t_env
 	analysis_name = "formant_generated_analysis_X2345.sdif"
 	if t_env_or_lpc == "lpc":
 		generate_formant_analysis(audio_file, analysis = analysis_name, nb_formants = nb_formants, wait = True, ana_winsize = ana_winsize)
@@ -398,7 +435,7 @@ def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", de
 def formant_dataframe_to_arrays(formants):
 	"""
  	parameters:
-		formant 	: pandas data frame with a formant
+		formants 	: pandas data frame with a formant
 		
 		returns the formant Frequency, Amplitude, Bandwith and Saliance
 		as separate variables. 
@@ -420,88 +457,41 @@ def formant_dataframe_to_arrays(formants):
 
 	return frequency, amplitude, bandwith, Saliance 
 
-import numpy as np
-
-# Extract_ts_of_pitch_praat
-def Extract_ts_of_pitch_praat(Fname):
-	"""
-		Fname : input file name
-	"""
-	import subprocess
-	import os	
-	Fname = os.path.abspath(Fname)
-
-	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat'), Fname]);
-
-	out = out.splitlines()
-
-	times = []
-	f0s = []
-
-	for line in out:
-		line = line.split()
-		times.append(line[0])
-		f0s.append(line[1])
-
-	#print times
-	f0s = [np.nan if item == '--undefined--' else float(item) for item in f0s]
-	return times, f0s
-
-def get_mean_pitch_praat(Fname):
-	times, f0s = Extract_ts_of_pitch_praat(Fname)
-	return np.nanmean(f0s)
-
-def get_formant_dispersion_svp(Fname, nb_formants=5, harmonicity_threshold = None):
-	"""Compute and return Formant Dispersion
-	"""
-
-	#compute formant with harmonicity if need
-	if not harmonicity_threshold:
-		df_analysis = get_tidy_formants(Fname, nb_formants=nb_formants, ana_winsize=2048, add_harmonicity=False)
-	else:
-		df_analysis = get_tidy_formants(Fname, nb_formants=nb_formants, ana_winsize=2048, add_harmonicity=True)
-		df_analysis = df_analysis.loc[df_analysis["harmonicity"] > harmonicity_threshold]
-
-	#compute formant means
-	df_analysis = df_analysis.groupby(["Formant"]).mean().reset_index()
-	means_formants = []
-	for formant in range(1, nb_formants+1):
-	    formant_val = df_analysis.loc[df_analysis["Formant"] == "F"+str(formant)]["Frequency"].values[0]
-	    means_formants.append(formant_val)
-
-	#compute formant dispersion
-	formant_disp = 0
-	for i in range(1, len(means_formants)):
-	    formant_disp += means_formants[i] - means_formants[i-1]
-	formant_disp = formant_disp/nb_formants
-
-	return formant_disp
-
-
-
 #get formant time series with praat
-def get_formant_ts_praat(audio_file, add_harmonicity=False):
+def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_formants=5, max_formant_freq=5500, pre_emph=50.0, add_harmonicity=False):
 	"""
 		parameters:
 		audio_file 	: mono audio file PATH to be analysed, you have to give the ABSOLUTE PATH
+		time_step   : Time step in seconds
+		window_size : Window Length this is useful for praat
+		nb_formants : Number of formants to compute
+		max_formant_freq : maximum formant frequency to use in the estimation
+		Pre emphasis from Hz : this is a praat parameter for formant estimation, check the get formant function praat's documentation
 		
 		returns 
-			Two beutiful dataframes, one with the frequnecies and one with the bandwidths
+			Two beautiful dataframes, one with the frequnecies and one with the bandwidths
 
 	"""
 	#call praat to do the analysis
 	import subprocess
 	import pandas as pd
 	import os
-	audio_file = os.path.abspath(audio_file)
 	
-	# cmd = [‘/Applications/Praat.app/Contents/MacOS/Praat’
- #                    , os.path.join(os.path.dirname(os.path.realpath(__file__)), ‘ts_formants.praat’)
- #                    , audio_file
- #         ]
- #    content = subprocess.check_output(cmd, shell=False, stderr=subprocess.STDOUT).splitlines()
+	#Take the absolulte path
+	audio_file = os.path.abspath(audio_file)
 
-	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat', "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat'), audio_file]);
+	#Call sub process
+	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat'
+		, "--run"
+		, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat')
+		, audio_file
+		, str(time_step)
+		, str(nb_formants)
+		, str(max_formant_freq)
+		, str(window_size)
+		, str(pre_emph)
+		]);
+
 	content = out.splitlines()
 
 	#parse and organize praat's output
@@ -509,8 +499,12 @@ def get_formant_ts_praat(audio_file, add_harmonicity=False):
 	bws_df = pd.DataFrame()
 	for line in content:
 		line = [ np.nan if x == '--undefined--' else np.float(x) for x in line.split()]
-		frequency = { 'F1' : line[1] ,'F2' : line[2] ,'F3' : line[3] ,'F4' : line[4] , 'F5' : line[5] }
-		bandwidth = {'F1'  : line[6], 'F2' : line[7] ,'F3' : line[8] ,'F4' : line[9] , 'F5' : line[10]}
+		
+		frequency = {}
+		bandwidth = {}
+		for index in range(0,nb_formants):
+			frequency['F'+str(index+1)] = line[index*2+1]
+			bandwidth['F'+str(index+1)] = line[index*2+2]
 		
 		freq_df = pd.DataFrame(frequency, index=[line[0]])
 		bw_df   = pd.DataFrame(bandwidth, index=[line[0]])
@@ -518,7 +512,7 @@ def get_formant_ts_praat(audio_file, add_harmonicity=False):
 		freqs_df = freqs_df.append(freq_df)
 		bws_df   = bws_df.append(bw_df)
 
-	
+	#Clean dataframes
 	freqs_df = freqs_df.dropna()
 	bws_df   = bws_df.dropna()
 
@@ -528,67 +522,84 @@ def get_formant_ts_praat(audio_file, add_harmonicity=False):
 	bws_df = bws_df.stack().to_frame("Bandwidth")
 	bws_df.index = bws_df.index.rename(["time", "Formant"])
 
-	#Add harmonicity row to formant estimation with super vp
+	#Add harmonicity row to formant estimation with super vp if harmonicty flag is on
 	if add_harmonicity:
-	    def add_harm(row, *args):
-	        from bisect import bisect
-	        f0times = args[0]
-	        f0harm = args[1]
+		def add_harm(row, *args):
+			from bisect import bisect
+			f0times = args[0]
+			f0harm = args[1]
 
-	        formant_time = row["time"]
+			formant_time = row["time"]
 
-	        index = bisect(f0times, formant_time)
-	        harm = f0harm[index-1]
-	        return harm
+			index = bisect(f0times, formant_time)
+			harm = f0harm[index-1]
+			return harm
+		
+		#Compute f0 with super vp and take the harmonicity
+		f0times, f0harm, _ = get_f0(audio_file = audio_file)
 
-	    f0times, f0harm, _ = get_f0(audio_file = file_name)
+		#Add harmonicity to bandwidth
+		bws_df = bws_df.reset_index()
+		bws_df["harmonicity"] = bws_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
+		bws_df = bws_df.set_index("time")
 
-	    #Add harmonicity to bandwidth
-	    bws_df = bws_df.reset_index()
-	    bws_df["harmonicity"] = bws_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
-	    bws_df = bws_df.set_index("time")
+		#Add harmonicity to frequency
+		freqs_df = freqs_df.reset_index()
+		freqs_df["harmonicity"] = freqs_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
+		freqs_df = freqs_df.set_index("time")
 
-	    #Add harmonicity to frequency
-	    freqs_df = freqs_df.reset_index()
-	    freqs_df["harmonicity"] = freqs_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
-	    freqs_df = freqs_df.set_index("time")
-
-	
-
-
+	#Return frequencies and bandwidths dataframes	
 	return freqs_df, bws_df
 
-def get_mean_formant_harmonicity(audio_file, harm_threshold=None):
+def get_mean_formant_praat_harmonicity(audio_file, time_step=0.001, window_size=0.1, nb_formants=5, max_formant_freq=5500, pre_emph=50.0, harmonicity_threshold=None):
 	"""
 		get mean formant with praat, but exclucding all values under a certain harmonicity threshold 
-		(if harm_threshold is defined, if None, just compute mean of time series)
+		(if harmonicity_threshold is defined, if None, just compute mean of time series)
+		It's not recomended to use this function without the harmonicity threshold.
+		To keep only harmonic sounds use a threshold > 0.85
 	"""
-	if not harm_threshold:
+
+	if not harmonicity_threshold:
 		#Get mean formant
-		freqs_df, bws_df = get_formant_ts_praat(audio_file, add_harmonicity=False)
+		freqs_df, bws_df = get_formant_ts_praat(audio_file, time_step = time_step
+												, window_size 		  = window_size
+												, nb_formants		  = nb_formants
+												, max_formant_freq	  = max_formant_freq
+												, pre_emph			  = pre_emph
+												, add_harmonicity 	  = False
+												)
+
 	else:
-		freqs_df, bws_df = get_formant_ts_praat(audio_file, add_harmonicity=True)
-		freqs_df = freqs_df.loc[freqs_df["harmonicity"]>harm_threshold]
-		bws_df = bws_df.loc[bws_df["harmonicity"]>harm_threshold]
+		freqs_df, bws_df = get_formant_ts_praat(audio_file, time_step = time_step
+												, window_size 		  = window_size
+												, nb_formants		  = nb_formants
+												, max_formant_freq	  = max_formant_freq
+												, pre_emph			  = pre_emph
+												, add_harmonicity	  = True
+												)
+
+		freqs_df 		 = freqs_df.loc[freqs_df["harmonicity"]>harmonicity_threshold]
+		bws_df 			 = bws_df.loc[bws_df["harmonicity"]>harmonicity_threshold]
 		
 
 	bws_df 	 = bws_df.reset_index().groupby(["Formant"]).mean().reset_index()
 	freqs_df = freqs_df.reset_index().groupby(["Formant"]).mean().reset_index()
 
+	return freqs_df, bws_df
+
 #Extract mean formant with praat
 def get_mean_formant_praat(Fname):
 	"""
 	Fname : file name to analyse
-	get mean formants with praat
+	get mean formants with praat script (mean is computed inside praat)
 	"""
 	import subprocess
 	import os
 	Fname = os.path.abspath(Fname)
 
-	script_name=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
+	script_name = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
 	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
 	Title, F1, F2, F3, F4, F5 = x.splitlines()
-
 
 	return float(F1), float(F2), float(F3), float(F4), float(F5)
 
@@ -604,65 +615,167 @@ def get_mean_tidy_formant_praat(Fname):
 
 	nb_formants = 5 # TODO parameterize this to Praat
 
-
 	formant_tags = ["F"+str(i) for i in range(1, nb_formants+1)]
 	formants     = get_mean_formant_praat(Fname)
 	data = {'Formant': formant_tags, "Frequency": formants}
 
 	return pd.DataFrame.from_dict(data)
 
-def get_mean_formant_praat_harmonicity():
-	#df, db = get_formant_ts_praat(file)
-	#df = df.reset_index().groupby(["Formant"]).mean().reset_index()
-	#F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
-	#F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
-	#F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
-	#F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
-	#F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
-
 	
-def analyse_audio_folder(source_folder, harmonicity_threshold = None, formant_dispersion_with_svp=True):
+def analyse_audio_folder(source_folder
+						, speed_of_sound		= 335
+						, time_step				= 0.001
+						, window_size			= 0.01 
+						, nb_formants			= 6
+						, nb_formants_fd		= 5
+						, max_formant_freq		= 5500
+						, pre_emph				= 50.0
+						, harmonicity_threshold = None 
+						, sc_rms_thresh         = -60
+						, sc_ws                 = 512
+						, parameter_tag         = None
+						, print_transformed_file = False
+						):
 	"""
-		Analyse all the sounds from a folder and returns a data frame with key vocal features
+	Analyse all the sounds from a folder and returns a data frame with key vocal features
+	Inputs:
+		source_folder 		  : Folder with all the sounds to analyse, prefer mono files, and wav
+		harmonicity_threshold : Threshold to filter formant frequencies
+		speed_of_sound		  : speed of sound to compute vocal tract length in m.s-1
+		time_step			  : The time step to estimate the formants (this is passed to Praat)
+		window_size			  : The window size of the formant analysis IN SECONDS  (this is passed to Praat)
+		nb_formants			  : Number of formants to estimate  (this is passed to Praat)
+		nb_formants_fd 		  : Number of formants to use in the formant dispersion analysis  (this is passed to Praat)
+								nb_formants_fd has to be <= to nb_formants
+		max_formant_freq	  : Maximum formant frequency available, this is an important praat parameter 
+								(5500 usually works well for female voices)
+								Check praat's documentation to know more
+		pre_emph			  : pre emphasis : check praat documentation on formant estimation
+		sc_rms_thresh		  : Amplitude threshold to remove from sound in spectral centroid analysis (in dB)
+		sc_ws 		  		  : Window Size in samples for the spectral centoid analysis
+		parameter_tag		  : parameter tag should be composed of two values.
+									First, the value of the position in the name file where the tag is
+									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
+									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':5000} })
+		print_transformed_file: for debuging purposes, put this to True to print each analysed file
+
+	Output:
+		Beautiful dataframe with all the features
+
 	"""
+
 	df_stimuli = pd.DataFrame()
 
+	#for each file in source folder, get all the features
 	for file in glob.glob(source_folder+"/*.wav"):
+		if print_transformed_file:
+			print file
 		#handle name of file
-		base = os.path.basename(file)
-		base = os.path.splitext(base)[0]
+		base = get_file_without_path(file)
+
+		#Handle updated parameter tags
+		if parameter_tag:
+			index = parameter_tag[0]
+			key   = base[index]
+			parameters = parameter_tag[1][key]
+
+			#update analysis parameters to match the file tag
+			if 'harmonicity_threshold' in parameters.keys(): harmonicity_threshold = parameters['harmonicity_threshold']
+			if 'time_step' 			   in parameters.keys(): time_step             = parameters['time_step'] 	
+			if 'window_size' 		   in parameters.keys(): window_size           = parameters['window_size'] 	
+			if 'nb_formants' 		   in parameters.keys(): nb_formants           = parameters['nb_formants'] 		   
+			if 'nb_formants_fd' 	   in parameters.keys(): nb_formants_fd        = parameters['nb_formants_fd'] 	   
+			if 'max_formant_freq' 	   in parameters.keys(): max_formant_freq      = parameters['max_formant_freq'] 	   
+			if 'pre_emph' 			   in parameters.keys(): pre_emph              = parameters['pre_emph'] 			   
+
 
 		#Get formant frequencies
-		F1, F2, F3, F4, F5 = get_mean_formant_praat(os.path.abspath(file))
+		df, db = get_mean_formant_praat_harmonicity(file 
+											, time_step        = time_step
+											, window_size      = window_size
+											, nb_formants      = nb_formants
+											, max_formant_freq = max_formant_freq
+											, pre_emph         = pre_emph
+											, harmonicity_threshold   = harmonicity_threshold
+											)
+
+
+		formants = df["Frequency"].values
+
+		#compute formant dispersion
+		fd = 0
+		for i in range(1, nb_formants_fd):
+			fd = fd + formants[i] - formants[i-1]
+		fd = fd / (nb_formants_fd -1)
 
 		#get mean pitch
-		pitch_mean = get_mean_pitch_praat(os.path.abspath(file))
+		pitch_mean = get_mean_pitch_praat(os.path.abspath(file))		
 
-		#compute formant_dispersion
-		if formant_dispersion_with_svp:
-			fd = get_formant_dispersion_svp(file, harmonicity_threshold=harmonicity_threshold)
-		else:
-			fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 5
+		#Compute vocal tract length following Fitch 1997 formulae
+		vtl = speed_of_sound/(2*fd)
 
 		#compute mean centroid
-		centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = -50, window_size = 512)
+		centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = sc_rms_thresh, window_size = sc_ws)
 
-		#create dataframes and append
-		aux_df = pd.DataFrame({"File"  : base
-		               			, "CGS" : centroid
-		               			, "F1" : F1
-		               			, "F2" : F2
-		               			, "F3" : F3
-		               			, "F4" : F4
-		               			, "F5" : F5
-		               			, "pitch_mean" : pitch_mean
-		               			, "formant_disp" : fd
-		               			, "sound_duration" : get_sound_duration(file)
-		            }, index = [0]
-		            )   
+		#create dictionary with values and then append to general dataframe
+		aux_dict = {}
 
-		df_stimuli = df_stimuli.append(aux_df)	
+		#Add fle and CGS
+		aux_dict["File"] = base
+		aux_dict["CGS"] = centroid
+		
+		#Add formant information
+		for index in range(0, nb_formants):
+			aux_dict["F"+str(index+1)] = formants[index]
+
+		#Add other descriptors
+		aux_dict["pitch_mean"]   	= pitch_mean
+		aux_dict["formant_disp"] 	= fd
+		aux_dict["vtl"]   		 	= vtl
+		aux_dict["sound_duration"]  = get_sound_duration(file)
+		
+		#convert dict to dataframe
+		aux_df = pd.DataFrame(aux_dict, index=[cpt])
+
+		#append df to general dataframe
+		df_stimuli = df_stimuli.append(aux_df)
+
 	return df_stimuli
+
+def get_formant_dispersion(Fname, harmonicity_threshold = None):
+	"""
+	Compute and return formant dispersion Following Fitch 1997 JASA Formula
+
+	"""
+	#Get formant frequencies
+	if harmonicity_threshold:
+		df, db = get_mean_formant_praat_harmonicity(Fname, harmonicity_threshold = harmonicity_threshold)
+		F1 = df.loc[df["Formant"] == "F1"]["Frequency"].values[0]
+		F2 = df.loc[df["Formant"] == "F2"]["Frequency"].values[0]
+		F3 = df.loc[df["Formant"] == "F3"]["Frequency"].values[0]
+		F4 = df.loc[df["Formant"] == "F4"]["Frequency"].values[0]
+		F5 = df.loc[df["Formant"] == "F5"]["Frequency"].values[0]
+
+	else:
+		F1, F2, F3, F4, F5 = get_mean_formant_praat(os.path.abspath(Fname))
+
+
+	#compute formant_dispersion
+	fd = (F2 - F1 + F3 - F2 + F4 - F3 + F5 - F4)  / 4
+
+	return fd
+
+def estimate_vtl(Fname, harmonicity_threshold=None, speed_of_sound=335):
+	"""
+	Estimate vocal tract length following the formula in Fitch 1997
+	the speed_of_sound is usually ~335 m/s, and L is the vocal tract length in m.
+	"""
+	
+	fd = get_formant_dispersion(Fname=Fname, harmonicity_threshold=harmonicity_threshold)
+
+	vtl = speed_of_sound/(2*fd)
+
+	return vtl
 
 
 # --------------------------------------------------------------------#

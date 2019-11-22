@@ -24,7 +24,7 @@ from super_vp_path import get_super_vp_path
 super_vp_path = get_super_vp_path()
 
 # ---------- generate_f0_analysis
-def generate_f0_analysis(audio_file, analysis ="", f_min =100, f_max=1500, F=3000, wait = True):
+def generate_f0_analysis(audio_file, analysis ="", f_min =80, f_max=1500, F=3000, wait = True):
 	"""
 	file : file to anlayse
 	analysis : sdif file to generate, if not defined analysis will be saved in the same path of the audio file, with the same name but with an sdif extension.
