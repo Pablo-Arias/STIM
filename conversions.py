@@ -4,7 +4,7 @@
 # ---------- Made by pablo Arias @ircam on 11/2015
 # ---------- Copyright (c) 2018 CREAM Lab // CNRS / IRCAM / Sorbonne Universite
 # ----------
-# ---------- make useful file/data/metric conversions 
+# ---------- useful file/data/metric conversions 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 

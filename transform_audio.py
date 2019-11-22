@@ -7,10 +7,6 @@
 # ---------- execute different audio transformations
 # ---------- to use this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from transform_audio import 'the functions you need'
-# ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 

@@ -7,10 +7,6 @@
 # ---------- execute different super vp commands
 # ---------- to use this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from super_vp_commands import 'the functions you need'
-# ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 

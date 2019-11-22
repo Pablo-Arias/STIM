@@ -7,10 +7,6 @@
 # ---------- Analyse audio and return sound features
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from audio_analysis import 'the functions you need'
-# ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 from scikits.audiolab import aiffwrite, aiffread, wavwrite, wavread, Sndfile, oggread  # scipy.io.wavfile can't read 24-bit WAV

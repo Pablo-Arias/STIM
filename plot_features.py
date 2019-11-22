@@ -6,10 +6,6 @@
 # ---------- plot sound features
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from plot_features import 'the functions you need'
-# ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
