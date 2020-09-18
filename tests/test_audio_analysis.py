@@ -31,7 +31,7 @@ class Test_audio_analysis(unittest.TestCase):
 		self.assertTrue(centroid > 0 )
 
 	def test_get_mean_spectral_centroid_when_sound(self):
-		mean_sc = get_mean_spectral_centroid_when_sound(self.audio_source)
+		mean_sc = get_mean_spectral_centroid_when_sound(self.audio_source, RMS_threshold = -30)
 
 		#Check condition
 		self.assertTrue(mean_sc > 0)
