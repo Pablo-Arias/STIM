@@ -9,6 +9,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
+from __future__ import absolute_import
+from __future__ import print_function
 from pylab import plot, show, title, xlabel, ylabel, subplot, savefig, grid, specgram, suptitle, yscale
 from scipy import fft, arange, ifft, io
 from numpy import sin, linspace, pi, cos, sin, random, array
@@ -18,13 +20,14 @@ from matplotlib import pyplot
 import matplotlib.pyplot as plt
 from pylab import *
 import os
-from scikits.audiolab import wavread
+import soundfile
 
 # ---------- local imports
 from parse_sdif import mean_matrix
 from super_vp_commands import generate_LPC_analysis, generate_true_env_analysis, generate_fft_analysis
 from audio_analysis import mean_formant_from_audio
 from audio_analysis import formant_dataframe_to_arrays
+from six.moves import range
 
 #plot_colors = ["red", "red", "green", "blue"]
 plot_colors = ["black", "black", "black", "grey", "yellow", "black", "black"]
@@ -65,10 +68,10 @@ def plot_PS(data, Fs):
 	k 	= arange(n)
 	T 	= n/Fs
 	frq = k/T # two sides frequency range
-	frq = frq[range(n/2)] # one side frequency range
- 	Y 	= fft(y)/n # fft computing and normalization
- 	Y 	= Y[range(n/2)]
- 	
+	frq = frq[list(range(n/2))] # one side frequency range
+	Y 	= fft(y)/n # fft computing and normalization
+	Y 	= Y[list(range(n/2))]
+	
 	pyplot.xscale('linear')
 	pyplot.plot(frq, abs(Y),'r') # plotting the spectrum
 	pyplot.xlabel('Freq (Hz)')
@@ -79,7 +82,7 @@ def plot_PS(data, Fs):
 # ---------- plot_spec_gram_from_audio
 def plot_spec_gram_from_audio(FileName, NFFT=512):
 	import matplotlib.pyplot as plt
-	sound_data, fs, enc = wavread(FileName)	
+	sound_data, fs = soundfile.read(FileName)
 
 	#Spectre
 	plt.style.use('ggplot')
@@ -166,7 +169,7 @@ def plot_spectrogram(audio_file, window_size = 2048, nfft = 256 , noverlap = 255
 		This only works with mono files
 	"""	
 
-	from scikits.audiolab import wavread
+
 	from scipy import signal
 	from MPS.modulation_spectrum import make_cmap, get_cmap_colors
 	from matplotlib.colors import LogNorm
@@ -566,7 +569,7 @@ def plot_formant_parameter(audio_file, nb_formants = 5, parameter = "", show = T
 	formants  = formant_from_audio(audio_file, nb_formants)	
 	frequency, amplitude, bandwith, Saliance  = formant_dataframe_to_arrays(formants)
 
-	print frequency
+	print(frequency)
 	time = frequency[0].index
 
 	if parameter == "Frequency":

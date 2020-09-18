@@ -6,13 +6,11 @@
 # ----------
 # ---------- functions for calling praat scripts from python 
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from praat_scripts import 'the functions you need'
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
+from __future__ import absolute_import
 import numpy as np
 import subprocess
 

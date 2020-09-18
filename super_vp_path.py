@@ -6,6 +6,7 @@
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
+from __future__ import absolute_import
 def get_super_vp_path():
 	import glob, os
 	AudioSculpt_version = glob.glob("/Applications/AudioSculpt*/AudioSculpt*.app/Contents/MacOS/supervp")[0]

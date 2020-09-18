@@ -10,12 +10,13 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
+from __future__ import absolute_import
+from __future__ import print_function
 from subprocess import call
 import parse_sdif
 import shlex, subprocess
 import os
 import numpy as np
-import parse_sdif
 from super_vp_path import get_super_vp_path
 super_vp_path = get_super_vp_path()
 
@@ -135,7 +136,7 @@ def generate_tenv_formant_analysis(audio_file, analysis = "", nb_formants = 5, w
 		elif f0 == "max":
 			f0 = np.max(f0val)
 		else:
-			print "f0 error! f0 should be either an int, a float or the strings \"mean\" or \"max\""			
+			print("f0 error! f0 should be either an int, a float or the strings \"mean\" or \"max\"")			
 
 	if analysis =="":
 		if os.path.dirname(audio_file) == "":
@@ -198,7 +199,7 @@ def generate_true_env_analysis(audio_file, analysis="", wait = True, f0 = "max",
 		elif f0 == "max":
 			f0 = np.max(f0val)
 		else:
-			print "f0 error! f0 should be either an int, a float or the strings \"mean\" or \"max\""
+			print("f0 error! f0 should be either an int, a float or the strings \"mean\" or \"max\"")
 
 	parameters 	=  "-t -ns  -S"+audio_file+" -Atenv +"+str(f0)+"Hz -F0 "+f0_analysis+" -Np2 -M0.0907029509544373s -oversamp "+str(oversamp)+" -Whanning -OS1 "+analysis
 	#parameters 	=  "-t -ns  -S"+audio_file+" -Atenv +"+str(f0)+"Hz -F0 "+f0_analysis+" -Np2 -M0.0464399084448814s -oversamp "+str(oversamp)+" -Whanning -OS1 "+analysis	
@@ -297,7 +298,7 @@ def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=
 		generate_f0_analysis( source_sound, f0_analysis)
 		parameters =  "-t -Afft -atenv -F0 "+f0_analysis+" -M"+freq_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling+" -F0 "+f0_analysis +" -Z -envwarp " + warp_file + " -S" + source_sound + " " + target_sound
 	else:
-		print "wrong warping method specified"
+		print("wrong warping method specified")
 	
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)

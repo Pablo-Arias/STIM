@@ -12,19 +12,18 @@
 # ---------- 
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from modulation_spectrum import 'the functions you need'
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
-from scikits.audiolab import wavread
+from __future__ import absolute_import
 import numpy as np
 from scipy import signal
 import matplotlib.pylab as plt
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
+from six.moves import range
+from six.moves import zip
 
 # ---------- get_cmap_colors
 def get_cmap_colors():
@@ -174,7 +173,7 @@ def compute_mod_spectrum(sound_in, fs, fband = 32, nstd = 6, DBNOISE = 60
 
 	#pad the sound with 0
 	silence_time    = 0.5
-	to_pad          = np.zeros(np.round(fs*silence_time))
+	to_pad          = np.zeros(np.int(np.round(fs*silence_time)))
 	paded_sound_in  = np.concatenate([to_pad,sound_in,to_pad])
 
 	#compute gaussian spectrogram

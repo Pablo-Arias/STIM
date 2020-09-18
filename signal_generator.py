@@ -7,26 +7,23 @@
 # ---------- plot sound features
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from signal_generator import 'the functions you need'
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
-
+from __future__ import absolute_import
 from pylab import plot, show, title, xlabel, ylabel, subplot, savefig, grid, specgram, suptitle, yscale
 from scipy import fft, arange, ifft, io
 from numpy import sin, linspace, pi, cos, sin, random, array
 import numpy as np
 from scipy.io.wavfile import read, write
 from matplotlib import pyplot
-from scikits.audiolab import wavwrite
+from six.moves import range
 
 def Normalize(data):
 	Max  = max(data)
-   	data = [x / Max for x in data]
-   	return data
+	data = [x / Max for x in data]
+	return data
 
 def WhiteNoiseGenerator(Duration, Fs):
 	t    = linspace(0, Duration, Duration * Fs, endpoint=True)
@@ -41,7 +38,7 @@ def Ramp(freq, Duration, Fs):
 	Ramp = []
 	DureeRamp = float(1)/freq
 	Ramp = linspace(0, DureeRamp , DureeRamp*Fs, endpoint=True)
- 	while len(Data) < Duration*Fs:
+	while len(Data) < Duration*Fs:
 		Data.extend(Ramp)	
 	Data = Data[0:Duration*Fs]	
 	Data = Normalize(Data)
@@ -51,12 +48,12 @@ def Triangle(freq, Duration, Fs):
 	Data, Ramp = [], []
 	DureeRamp = float(1)/freq
 	UpRamp 	 = linspace(0, DureeRamp , (DureeRamp*Fs/2))
- 	DownRamp = linspace(DureeRamp, 0 , (DureeRamp*Fs/2))
+	DownRamp = linspace(DureeRamp, 0 , (DureeRamp*Fs/2))
 	
- 	Ramp.extend(UpRamp)
+	Ramp.extend(UpRamp)
 	Ramp.extend(DownRamp)
 
- 	while len(Data) < Duration*Fs:
+	while len(Data) < Duration*Fs:
 		Data.extend(Ramp)	
 
 	Data = Data[0:Duration*Fs]	
@@ -123,6 +120,5 @@ def generate_silence_sound(duration, fs, name, enc = "pcm16"):
 	"""
 
 	import numpy as np
-	from scikits.audiolab import wavwrite
 	data = np.zeros(duration*fs)
 	wavwrite(data, name, fs, enc)

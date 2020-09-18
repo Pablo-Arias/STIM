@@ -1,15 +1,19 @@
 form Variables
     sentence filename
+	positive time_step
+	positive pitch_floor
+	positive pitch_ceiling
 endform
+
 Read from file... 'filename$'
 
 tmin = Get start time
 tmax = Get end time
-To Pitch... 0 75.0 350.0
+To Pitch... time_step pitch_floor pitch_ceiling
 Rename: "pitch"
 
-for i to (tmax-tmin)/0.001
-	time = tmin + i * 0.001
+for i to (tmax-tmin)/time_step
+	time = tmin + i * time_step
 	
 	f1 = Get value at time: time, "Hertz", "Linear"
 

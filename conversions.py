@@ -14,6 +14,16 @@ import os
 def lin2db(vec): return 20.*np.log10(vec)
 def db2lin(vec): return 10**(vec/20.)
 
+def hz_to_cents(f0, f1):
+	"""
+	function to convert the interval [f0, f1]  in Hz to cents
+	"""
+	if np.isnan(f0) or np.isnan(f1):
+		return np.nan
+
+	return 1200* np.log2(f1/np.float(f0))
+
+
 #name conversions
 def get_file_without_path(file_name, with_extension=False):
 	"""

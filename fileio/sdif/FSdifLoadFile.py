@@ -1,7 +1,10 @@
 from __future__ import division
+from __future__ import absolute_import
 import collections
 import eaSDIF
 import numpy as np
+from six.moves import range
+from six.moves import zip
 
 def FSdifLoadFile(f0file, retrieve_nvts=False):
     '''
@@ -22,7 +25,7 @@ def FSdifLoadFile(f0file, retrieve_nvts=False):
 
     if retrieve_nvts:
         NVTs = []
-        for nvt in xrange(file.GetNbNVT()) :
+        for nvt in range(file.GetNbNVT()) :
             NVT = file.GetNVT(nvt)
             #NVTs become invalid when file is closed, so we need to copy the content
             NVT_deep_copy =  eaSDIF.NameValueTable()

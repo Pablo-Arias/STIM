@@ -6,17 +6,16 @@
 # ----------
 # ---------- transform a sound with the smile algorithm
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from one_way_smile_algorithm.one_way_smile_algorithm import transform_to_smile
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 
 #imports
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
 import subprocess
-from scikits.audiolab import wavread, wavwrite, Sndfile
+import soundfile
 import pandas as pd
 import numpy as np
 import os
@@ -26,10 +25,10 @@ from os.path import basename
 from pyo import *
 from bisect import bisect
 
-
 #plots
 from pylab import *
 import matplotlib.pyplot as plt
+from six.moves import range
 plt.style.use('ggplot')
 
 
@@ -65,7 +64,7 @@ def get_formant_frequency_automation(time_list, formant_freqs, min_val, max_val)
     
         return pairs
     else:
-        print 'Error : freqs and time index don\'t have the length '
+        print('Error : freqs and time index don\'t have the length ')
 
 #---- get_gain_automation
 def get_gain_automation(time_list, harmonicity_list, max_gain, neutral_gain, boost_when_harmonic):
@@ -85,7 +84,7 @@ def get_gain_automation(time_list, harmonicity_list, max_gain, neutral_gain, boo
         return pairs
 
     else:
-        print 'Error : harmonicity_list and time index don\'t have the length '        
+        print('Error : harmonicity_list and time index don\'t have the length ')        
 
 # -- dynamic_filter
 # -- boost/cut (depending on alpha) the third formant when the signal is harmonic and boost/cut when the signal is inharmonic at 6000 Hz
@@ -164,7 +163,7 @@ def generate_warping_file(features_df, audio_file, alpha):
     alpha_array      = alpha[1]
 
     #This function generates a warping file when alpha is dynmaic
-    x, fs, enc = wavread(audio_file)
+    x, fs = soundfile.read(audio_file)
     nbpf = 7 # 5 formants + 2 neutral points + 2 begining and end spectrum
 
     #name the warp file
@@ -255,7 +254,7 @@ def plot_file_info(features_df, sound_filename, harmonicity_threshold, alpha):
 
     #waveform
     file_format = 'pdf'
-    sound_data, fs, enc = wavread(sound_filename)
+    sound_data, fs = soundfile.read(sound_filename)
     t = np.linspace(0, len(sound_data)/fs, len(sound_data), endpoint=True)
 
     fig = plt.figure()
@@ -420,7 +419,7 @@ def transform_to_smile(audio_file
         features_df = freqs_df.reset_index().set_index("time")
         features_df.columns = [u'Formant', u'frequency'] #rename columns for compatibility
     else:
-        print "formant_estimation should be either lpc, t_env or praat"
+        print("formant_estimation should be either lpc, t_env or praat")
 
     
     features_df = features_df[["frequency", "Formant"]].reset_index()
@@ -461,7 +460,7 @@ def transform_to_smile(audio_file
     else:
         #copy file without filtering
         from shutil import copyfile
-        print "No dynamic filter applied"
+        print("No dynamic filter applied")
         copyfile(warped_file, filtered_file)
 
     if plot_features_pdf:

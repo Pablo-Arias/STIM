@@ -12,6 +12,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 #imports
+from __future__ import absolute_import
+from __future__ import print_function
 import pyaudio
 import scipy.fftpack
 import scipy.interpolate
@@ -22,7 +24,8 @@ import matplotlib.pyplot as plt
 
 #Local
 import sys
-sys.path.append('/Users/arias/Documents/Developement/Python/')
+from six.moves import range
+from six.moves import zip
 from modulation_spectrum import compute_mod_spectrum, plot_MPS,take_reduced_matrix, get_cmap_colors
 
 def make_cmap(colors, position=None, bit=False):
@@ -92,7 +95,7 @@ settings = {
 	"frames_per_buffer": 4096*4
 }
 audio  = pyaudio.PyAudio()
-print "Chosen device : " + audio.get_default_input_device_info().get('name')
+print("Chosen device : " + audio.get_default_input_device_info().get('name'))
 stream = audio.open(**settings)
 
 

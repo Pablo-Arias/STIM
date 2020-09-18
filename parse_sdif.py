@@ -4,23 +4,20 @@
 # ---------- Analyse audio and return soudn features
 # ---------- to us this don't forget to include these lines before your script:
 # ----------
-# ---------- import sys
-# ---------- sys.path.append('/Users/arias/Documents/Developement/Python/')
-# ---------- from parse_sdif import 'the functions you need'
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy as np
 from pandas import DataFrame
 import os
-
-#local
-import super_vp_commands
 
 #sdif
 import eaSDIF
 import sys
 from fileio.sdif.FSdifLoadFile import FSdifLoadFile
+from six.moves import range
 
 
 def get_f0_info(f0file) :
@@ -40,7 +37,7 @@ def get_f0_info(f0file) :
             f0harm = None
         f0val   = np.array(f0data)[:,0]
     except RuntimeError as rr :
-        print "failed reading "+f0file+" as sdif try reading as txt!"
+        print("failed reading "+f0file+" as sdif try reading as txt!")
         f0times_data = np.loadtxt(f0file)
         f0times = np.array(f0times_data)[:,0]
         f0val   = np.array(f0times_data)[:,1]        
@@ -100,7 +97,7 @@ def get_formants_info(formant_file):
         frame = eaSDIF.Frame()
         ent.ReadNextSelectedFrame(frame)
     except EOFError : 
-        print "In get_formants_info first exception"
+        print("In get_formants_info first exception")
         pass 
 
 
@@ -110,7 +107,7 @@ def get_formants_info(formant_file):
             try :
                 mat = frame.GetMatrixWithSig("1RES")
             except IndexError :
-                print "Index Error dans get_formants_info in parse_sdif"
+                print("Index Error dans get_formants_info in parse_sdif")
                 # matrix is not present so we continue
                 continue
             frame_time = frame.GetTime()            

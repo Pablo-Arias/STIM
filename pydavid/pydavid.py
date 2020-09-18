@@ -6,6 +6,8 @@ Created on Mon Mar 5 16:57:12 2018
 @author: leehooni
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import threading
 
 from pyosc import OSC
@@ -25,7 +27,7 @@ class pydavid():
         # tags will contain 'fff'
         # args is a OSCMessage with data
         # source is where the message came from (in case you need to reply)
-        print ("Now do something with", user,args[2],args[0],1-args[1])
+        print(("Now do something with", user,args[2],args[0],1-args[1]))
 
 
     def __init__(self,address):
@@ -43,7 +45,7 @@ class pydavid():
 
     def connect(self):
         self.client.connect((self.address, 5678))
-        print 'Testing OSC connection...'
+        print('Testing OSC connection...')
         oscmsg = OSC.OSCMessage()
         oscmsg.append('pyDAVID is connected')
         oscmsg.setAddress('/print')
@@ -52,10 +54,10 @@ class pydavid():
         servert.daemon = True
 
         servert.start()
-        print "Starting OSCServer. Use ctrl-C to quit."
+        print("Starting OSCServer. Use ctrl-C to quit.")
 
         self.client.send(oscmsg)
-        print oscmsg
+        print(oscmsg)
 
     def disconnect(self):
 #        self.servert.exit()
