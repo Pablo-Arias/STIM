@@ -238,7 +238,6 @@ def index_wav_file(source, rms_threshold = -50, WndSize = 16384, target_folder =
 				except:
 					pass
 
-
 				#write(filename = target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav",rate = fs, data= x[begining:end])
 				#wavwrite(x[begining:end], target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav", fs, enc='pcm24')
 				soundfile.write(target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav", x[begining:end] , fs)
@@ -257,19 +256,13 @@ def filter_file(s, src, target, type, freq, q =1):
 	freq : float or PyoObject, optional, Cutoff or center frequency of the filter. Defaults to 1000.
 	q : float or PyoObject, optional Q of the filter, defined (for bandpass filters) as freq/bandwidth. Should be between 1 and 500. Defaults to 1.
 	
-	
-
-	example of use: 
+	Example: 
 		from pyo import Server
 		s  = Server(duplex=0, audio="offline")
 		for file in glob.glob("*.wav"):
 			filter_file(s, file, "filtered/"+file, type = 1, freq = 300, q = 1)
 			s.shutdown()
 	"""
-	
-
-
-
 	from pyo import sndinfo, SfPlayer, Biquad
 	
 	duration = sndinfo(src)[1]

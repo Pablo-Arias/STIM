@@ -147,7 +147,6 @@ def get_RMS_over_time(audio_file, window_size = 1024, in_db = True):
 		this function only works for mono files
 	"""	
 	import glob
-	from scikits.audiolab import wavread, aiffread
 	from scipy import signal
 	import numpy as np
 
@@ -188,7 +187,6 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 		this function only works for mono files
 	"""	
 	import glob
-	from scikits.audiolab import wavread, aiffread
 	from scipy import signal
 
 	#Read audio file
@@ -1123,8 +1121,13 @@ def get_nb_channels(audio_file):
 	"""
 	get number of channels of audiofile
 	"""
-	f = Sndfile(audio_file, 'r')
-	return f.channels	
+	sound_in, sr = soundfile.read(audio_file)
+	if len(sound_in.shape) < 2:
+		nb_channels= 1
+	else:
+		nb_channels = sound_in.shape[1]
+	
+	return nb_channels
 
 
 def find_silence(audio_file, threshold = -65, wnd_size = 16384):

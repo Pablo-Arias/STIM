@@ -9,7 +9,7 @@ import glob
 ## -------------------- ##
 ##  Tranform_audio tests
 ## -------------------- ##
-class Test_audio_analysis(unittest.TestCase):
+class Test_transform_audio(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.audio_folder = "Sounds/"
@@ -50,7 +50,7 @@ class Test_audio_analysis(unittest.TestCase):
 		f = soundfile.SoundFile(aux)
 		self.assertEqual(f.format, 'AIFF')
 
-
+		#remove file
 		os.remove(aux)
 
 	def test_extract_sentences_tags(self):
@@ -82,6 +82,8 @@ class Test_audio_analysis(unittest.TestCase):
 		s  = Server(duplex=0, audio="offline")
 		filter_file(s, self.audio_source, self.aux_file, type=0, freq=300, q =1)
 		self.assertTrue(os.path.exists(self.aux_file))
+
+		#remove file
 		os.remove(self.aux_file)
 
 	def test_cut_silence_in_sound(self):
