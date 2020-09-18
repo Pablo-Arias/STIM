@@ -1,15 +1,15 @@
 # STIM
 
-I did these set of python modules during my PhD at IRCAM to handle the creation and transformation of audio and video experimental stimuli.
+This series of scripts and python modules were done to handle the creation and transformation of audio and video experimental stimuli.
 
-These python modules allow to easilly handle indexing of audio/video databases, transform audio and video in different ways but also extract different audio features.
+They allow to easilly handle indexing of audio/video databases, transform audio and video in different ways and extract different audio features.
 
-I'll do a set of tutorials soon to show how these modules work.
+There a series of tutorials in the tutorial section showing how these modules work.
 
 Some interesting modules:
 
 ## audio_analysis ##
-Extracting features from audio
+Extract audio features
 
 ## super_vp_commands ##
 A set of wraper functions around IRCAM super-vp library (needs audiosculpt http://forumnet.ircam.fr/product/audiosculpt-en/)
@@ -53,6 +53,7 @@ If you are not using conda, try installing it with pip:
 ```
 pip install scikits.audiolab
 ```
+
 ###  Install pyo ### 
 Pyo is a set of python modules used for RT and offline audioprocessing. To install it download the installer [here](http://ajaxsoundstudio.com/software/pyo/)
 
