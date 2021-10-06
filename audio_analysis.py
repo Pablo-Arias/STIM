@@ -24,6 +24,9 @@ import numpy as np
 from bisect import bisect
 from six.moves import range
 from functools import reduce
+import contextlib
+import collections
+
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -198,7 +201,6 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 	                               , mode = 'magnitude'
 	                              )
 
-
 	#plot specgram
 	if plot_specgram:
 	    plt.figure()
@@ -216,8 +218,9 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 	    
 	return t, centroid_list
 
+
 # Extract_ts_of_pitch_praat
-def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350):
+def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350, harmonicity_threshold=None):
 	"""
 		Extract pitch time series using praat for the file Fname
 
@@ -253,9 +256,31 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 		f0s.append(line[1])
 
 	f0s = [np.nan if item == b'--undefined--' else float(item) for item in f0s]
+
+	#If harmonicity threshold is defined, clean with harm thresh
+	if harmonicity_threshold:
+		times =  [np.float(x) for x in times]
+		f0s   = [np.float(x) for x in f0s]
+		
+		from bisect import bisect_left
+		f0_times, f0_harm, _ = get_f0(audio_file = Fname)
+
+		cleaned_vals  = []
+		cleaned_times = []
+		for index, time in enumerate(times):
+			idx_harm = bisect_left(f0_times, time)
+
+			
+			if harmonicity_threshold < f0_harm[idx_harm-1]:
+				cleaned_vals.append(f0s[index])
+				cleaned_times.append(time)
+
+		
+		times, f0s = cleaned_times, cleaned_vals
+
 	return times, f0s
 
-def get_mean_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350):
+def get_mean_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350, harmonicity_threshold = None):
 	"""
 		Extract mean pitch using praat for the file Fname
 		
@@ -268,11 +293,13 @@ def get_mean_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceilin
 			mean pitch
 
 	"""	
-	times, f0s = Extract_ts_of_pitch_praat(Fname, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling)
+	times, f0s = Extract_ts_of_pitch_praat(Fname, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
 	return np.nanmean(f0s)	
 
-def get_pitch_std(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350):
-	times, f0s  = Extract_ts_of_pitch_praat(Fname=Fname, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling)
+def get_pitch_std(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350, harmonicity_threshold=None):
+
+	times, f0s  = Extract_ts_of_pitch_praat(Fname=Fname, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
+
 	return np.nanstd(f0s)
 
 # --------------------------------------------------------------------#
@@ -353,7 +380,7 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 	return all_formants
 
 
-def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True, ana_winsize = 512):
+def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True, ana_winsize = 512, destroy_sdif_after_analysis = True):
 	"""
  	parameters:
 		audio_file 	: file to anlayse
@@ -386,6 +413,10 @@ def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True, ana_winsi
 
 	#Get mean formant from sdif analysis file
 	mean_formants = mean_formant_from_sdif(formant_analysis)
+
+	#destroy the sdif file generated if specified by parameter
+	if destroy_sdif_after_analysis:
+		os.remove(formant_analysis)
 	
 	#Return mean formants
 	return mean_formants
@@ -1019,7 +1050,7 @@ def get_spectrum(file, window_size = 256, noverlap = 0, plot_spec = False, plot_
 
 
 # ---------- get_f0
-def get_f0(audio_file, analysis ="",wait = True, destroy_sdif_after_analysis = True):
+def get_f0(audio_file, analysis ="", f_min =80, f_max=1500, F=3000, wait = True, destroy_sdif_after_analysis = True):
 	"""
     Get f0
     	audio_file : file to analyse
@@ -1040,7 +1071,7 @@ def get_f0(audio_file, analysis ="",wait = True, destroy_sdif_after_analysis = T
 		f0_analysis = os.path.dirname(audio_file)+ "/" + file_tag + "f0.sdif"
 	
 	from super_vp_commands import generate_f0_analysis
-	generate_f0_analysis( audio_file, f0_analysis)
+	generate_f0_analysis( audio_file, f0_analysis, f_min =f_min, f_max=f_max, F=F, wait = wait)
 
 	
 	from parse_sdif import get_f0_info
@@ -1193,7 +1224,7 @@ def get_mean_rms_level_when_sound(source, rms_threshold = -50, window_size = 163
 	You can change the rms threshold to tune the algorithm
 	"""
 	#Read audio file
-	x, fs = soundfile.read(string(source))
+	x, fs = soundfile.read(source)
 
 	intervals = get_intervals_of_sound(source, RMS_threshold = rms_threshold, window_size = window_size)
 	t, rmss = get_RMS_over_time(source, window_size = window_size)
@@ -1218,6 +1249,200 @@ def get_mean_rms_level_when_sound(source, rms_threshold = -50, window_size = 163
 		return np.nan
 
 
+def get_silence_level(source, window_size = 16384):
+	"""
+	input:
+		source : fsource audio file
+		WndSize : window size to compue the RMS on
+
+	Return the minimum level in an audio file
+	"""
+	#Read audio file
+	t, rmss = get_RMS_over_time(source, window_size = window_size)
+
+	return np.min(rmss)
 
 
+# -------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+# ------ VAD - Example code taken from : https://github.com/wiseman/py-webrtcvad/blob/master/example.py  ------#
+# -------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+class Frame(object):
+    """Represents a "frame" of audio data."""
+    def __init__(self, bytes, timestamp, duration):
+        self.bytes = bytes
+        self.timestamp = timestamp
+        self.duration = duration
 
+def read_wave(path):
+    """Reads a .wav file.
+    Takes the path, and returns (PCM audio data, sample rate).
+    """
+    import contextlib
+    import wave
+
+    with contextlib.closing(wave.open(path, 'rb')) as wf:
+        num_channels = wf.getnchannels()
+        assert num_channels == 1
+        sample_width = wf.getsampwidth()
+        assert sample_width == 2
+        sample_rate = wf.getframerate()
+        assert sample_rate in (8000, 16000, 32000, 48000)
+        pcm_data = wf.readframes(wf.getnframes())
+        return pcm_data, sample_rate
+
+
+def write_wave(path, audio, sample_rate):
+    """Writes a .wav file.
+    Takes path, PCM audio data, and sample rate.
+    """
+    import wave
+
+    with contextlib.closing(wave.open(path, 'wb')) as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(audio)
+
+
+def frame_generator(frame_duration_ms, audio, sample_rate):
+    """Generates audio frames from PCM audio data.
+    Takes the desired frame duration in milliseconds, the PCM data, and
+    the sample rate.
+    Yields Frames of the requested duration.
+    """
+    n = int(sample_rate * (frame_duration_ms / 1000.0) * 2)
+    offset = 0
+    timestamp = 0.0
+    duration = (float(n) / sample_rate) / 2.0
+    while offset + n < len(audio):
+        yield Frame(audio[offset:offset + n], timestamp, duration)
+        timestamp += duration
+        offset += n           
+
+def vad_collector(sample_rate, frame_duration_ms,padding_duration_ms, vad, frames):
+	"""Filters out non-voiced audio frames.
+	Given a webrtcvad.Vad and a source of audio frames, yields only
+	the voiced audio. Uses a padded, sliding window algorithm over the audio frames.
+	When more than 90% of the frames in the window are voiced (as
+	reported by the VAD), the collector triggers and begins yielding
+	audio frames. Then the collector waits until 90% of the frames in
+	the window are unvoiced to detrigger.
+	The window is padded at the front and back to provide a small
+	amount of silence or the beginnings/endings of speech around the
+	voiced frames.
+
+	Arguments:
+	sample_rate : The audio sample rate, in Hz.
+	frame_duration_ms : The frame duration in milliseconds.
+	padding_duration_ms : The amount to pad the window, in milliseconds.
+	vad : An instance of webrtcvad.Vad.
+	frames : a source of audio frames (sequence or generator).
+	
+	Returns : A generator that yields PCM audio data.
+	"""
+	num_padding_frames = int(padding_duration_ms / frame_duration_ms)
+
+	# We use a deque for our sliding window/ring buffer.
+	ring_buffer = collections.deque(maxlen=num_padding_frames)
+
+	# We have two states: TRIGGERED and NOTTRIGGERED. We start in the
+	# NOTTRIGGERED state.
+	triggered = False
+
+	#To store sentences
+	time_tags = []
+	sentences = []
+
+	voiced_frames = []
+	for frame in frames:
+		is_speech = vad.is_speech(frame.bytes, sample_rate)
+
+		if not triggered:
+			ring_buffer.append((frame, is_speech))
+			num_voiced = len([f for f, speech in ring_buffer if speech])
+			
+			# If we're NOTTRIGGERED and more than 90% of the frames in
+			# the ring buffer are voiced frames, then enter the
+			# TRIGGERED state.
+			if num_voiced > 0.9 * ring_buffer.maxlen:
+				triggered = True
+				beg = frame.timestamp
+				
+				# We want to yield all the audio we see from now until
+				# we are NOTTRIGGERED, but we have to start with the
+				# audio that's already in the ring buffer.
+				for f, s in ring_buffer:
+				    voiced_frames.append(f)
+				ring_buffer.clear()
+		else:
+			
+			# We're in the TRIGGERED state, so collect the audio data
+			# and add it to the ring buffer.
+			voiced_frames.append(frame)
+			ring_buffer.append((frame, is_speech))
+			num_unvoiced = len([f for f, speech in ring_buffer if not speech])
+
+			# If more than 90% of the frames in the ring buffer are
+			# unvoiced, then enter NOTTRIGGERED and yield whatever
+			# audio we've collected.
+			if num_unvoiced > 0.8 * ring_buffer.maxlen:
+				triggered = False
+				end = frame.timestamp
+
+				#Store data
+				sentences.append(b''.join([f.bytes for f in voiced_frames]))
+				time_tags.append([beg, end])
+
+
+				ring_buffer.clear()
+				voiced_frames = []
+
+
+	# If we have any leftover voiced audio when we run out of input,
+	# yield it.
+	if voiced_frames:
+		
+		sentences.append( b''.join([f.bytes for f in voiced_frames]))
+		beg = voiced_frames[0].timestamp
+		end = voiced_frames[-1].timestamp
+		time_tags.append([beg, end])
+
+	return time_tags, sentences
+
+
+def get_voiced_segments_vad(audio_file, vad=3, frame_duration_ms=30, padding_duration_ms=300, write_sentences= False, destination_folder="", add_time_tags=False):
+	#A frame must be either 10, 20, or 30 ms in duration:
+	
+	#audio, sample_rate = read_wave("tests/new_sr.wav")
+	import webrtcvad
+	x, fs = read_wave(audio_file)
+
+	vad = webrtcvad.Vad(vad)
+	frames = frame_generator(frame_duration_ms, x, fs)
+	frames = list(frames)
+	time_tags, sentences = vad_collector(fs, frame_duration_ms=frame_duration_ms, padding_duration_ms=padding_duration_ms, vad=vad, frames=frames)
+
+	#sentences = get_speech_sentences(times, is_speech)
+
+	# if len(sentences) > 0 and write_sentences:
+	# 	for index, sentence in enumerate(sentences):
+	# 		beg = times.index(sentence[0])
+	# 		end = times.index(sentence[1])
+
+	# 		write_wave(destination_folder + str(index)+".wav", x[beg:end], fs)
+
+	if write_sentences:
+		for i, sentence in enumerate(sentences):
+			if add_time_tags:
+				start = time_tags[i][0]
+				stop = time_tags[i][1]
+				path = destination_folder+"%002d_%00.2f_%00.2f.wav" % (i,start, stop,)
+			else:
+				path = destination_folder+"%002d.wav" % (i,)
+
+			write_wave(path, sentence, fs)
+
+
+	return time_tags

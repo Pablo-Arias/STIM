@@ -9,8 +9,6 @@
 # ----------
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
-
-
 from __future__ import absolute_import
 from __future__ import print_function
 from scipy.io.wavfile import read, write
@@ -89,7 +87,18 @@ def change_bit_encoding(source, target, new_pcm):
 	This function hasn't been tested
 	"""
 	x, fs = soundfile.read(str(source))		
-	soundfile.write(target, x, fs, type = new_pcm)
+	soundfile.write(target, x, fs, new_pcm)
+
+def down_sample_audio_file(source, target, new_sf):
+	from pydub import AudioSegment
+	from conversions import get_file_without_path
+
+	sound = AudioSegment.from_file(source)
+	sound = sound.set_frame_rate(new_sf)
+	sound = sound.set_sample_width(2)
+
+	extension = get_file_without_path(source, with_extension=True).split(".")[1]
+	sound.export(out_f=target, format=extension)
 
 
 ##### ------------------------------------------------------	
@@ -433,4 +442,57 @@ def audio_peak_normalisation(source, target, max_peak=0.8):
 
 	soundfile.write(target, x, fs, f.subtype)
 
+
+def apply_fadeout(source, target, duration=0.05):
+	# convert to audio indices (samples)
+	x, fs = soundfile.read(str(source))
+	f = soundfile.SoundFile(source)
+
+	length = int(round(duration*fs))
+	end = x.shape[0]
+	start = end - length
+
+	# compute fade out curve
+	# linear fade
+	fade_curve = np.linspace(1.0, 0.0, length)
+
+	# apply the curve
+	ch_1 = x[:,0]
+	ch_2 = x[:,1]
+
+	ch_1[start:end] = ch_1[start:end] * fade_curve
+	ch_2[start:end] = ch_2[start:end] * fade_curve
+
+	out = np.array([ch_1, ch_2])
+	out = np.transpose(out)
+
+
+	soundfile.write(target, out, fs, f.subtype)
+
+
+
+def apply_fadein(source, target, duration=0.05):
+	# convert to audio indices (samples)
+	x, fs = soundfile.read(str(source))
+	f = soundfile.SoundFile(source)
+
+	length = int(duration*fs)
+	end = length
+
+
+	# compute fade out curve
+	# linear fade
+	fade_curve = np.linspace(1.0, 0.0, length)
+
+	# apply the curve
+	ch_1 = x[:,0]
+	ch_2 = x[:,1]
+
+	ch_1[0:end] = ch_1[0:end] * fade_curve
+	ch_2[0:end] = ch_2[0:end] * fade_curve
+
+	out = np.array([ch_1, ch_2])
+	out = np.transpose(out)
+
+	soundfile.write(target, out, fs, f.subtype)
 

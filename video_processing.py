@@ -65,7 +65,12 @@ def replace_audio(video_file, new_audio, target_video):
 	path = os.path.dirname(os.path.realpath(video_file))
 
 	
-	command = "ffmpeg -i "+video_file+" -i "+new_audio+" -map 0:v -map 1:a -c copy -shortest " + target_video
+	#Old command to process /mov, re-encoding audio
+	#command = "ffmpeg -i "+video_file+" -i "+new_audio+" -map 0:v -map 1:a -c copy -shortest " + target_video
+	
+	#New command to process mp4, re-encoding audio
+	command = "ffmpeg -i "+video_file+" -i "+new_audio+" -c:v copy -map 0:v:0 -map 1:a:0 "+target_video
+
 	subprocess.call(command, shell=True)
 
 
@@ -338,7 +343,7 @@ def convert_to_avi(source, target):
 	subprocess.call(command, shell=True)
 
 
-def extract_frames_video(source, folder):
+def extract_frames_video(source, folder, tag=""):
 	"""
 	Extract the frames of a video
 	"""
@@ -347,7 +352,7 @@ def extract_frames_video(source, folder):
 
 	os.mkdir(folder)
 
-	command = "ffmpeg -i "+source+" -r 4 "+folder+"$filename%01d.bmp"
+	command = "ffmpeg -i "+source+" -r 4 "+folder+tag+"$filename%01d.bmp"
 	subprocess.call(command, shell=True)
 
 
@@ -358,12 +363,85 @@ def crop_video(source_video, target_video, x=0, y=0,out_w=0 , out_h=0 ):
 	command = "ffmpeg -i "+source_video+" -strict -2 -filter:v crop="+str(out_w)+":"+str(out_h)+":"+str(x)+":"+str(y)+" "+target_video
 	subprocess.call(command, shell=True)
 
+def get_fps(source):
+	"""
+		Get fps of video file
+	"""
+	print("python3")
+	import subprocess
+	import os
+	import shlex
+	command = "ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate " + source
+	#output  = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
 
-def get_fps(source_video):
-	import cv2
+	#subprocess.call(command, shell=True)
 
-	vidcap = cv2.VideoCapture(source_video)
-	fps = vidcap.get(cv2.CAP_PROP_FPS)
-	return fps
+	#p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	#out, err =  p.communicate()
+	#return out
+
+	#p = subprocess.Popen(shlex.split(command), bufsize=1, universal_newlines=True)
+	#return p.communicate()
+	from subprocess import check_output
+
+	x = check_output(["ffprobe", "-v", "error", "-select_streams", "v", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries stream=r_frame_rate", source],shell=True,stderr=subprocess.STDOUT)
+
+	return x
+
+
+def color_correction(source_video, target_video, gamma=1.5, saturation =1.3):
+	"""
+	Gamma increases ...
+	Saturation increases colors
+	"""
+	import subprocess
+	import os
+	
+	command = "ffmpeg -i " + source_video + " -vf eq=gamma="+str(1.5)+":saturation="+str(saturation)+" -c:a copy "+ target_video
+	subprocess.call(command, shell=True)
+
+def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, video_codec="copy", preset="ultrafast", loseless=0):
+	"""
+	Create a movie with a series of frames
+	frame_name_tag : if your frames are named frame_001.png, frame_name_tag="frame_"
+	target_video : the video that will be created
+	video_codec : specifiy the video copy flag to pass to ffmpef. 
+	Possiblities:
+		"copy" : will copy frames, videos will be very big, but generation will bef ast
+		"libx265" : generation will be slow but videos will be small
+		"preset" : The default is medium. The preset determines compression efficiency and therefore affects encoding speed. 
+				   options: superfast, veryfast, faster, fast, medium, slow, slower, veryslow, and placebo. 
+				   Use the slowest preset you have patience for. Ignore placebo as it provides insignificant returns for a significant increase in encoding time.
+		"loseless" : 1 : losseless encoding; 0 : loss encoding
+
+ 	"""
+	import subprocess
+	import os
+	
+	#command = "ffmpeg -framerate "+str(fps)+" -i "+frame_name_tag+"%d"+img_extension+" -vcodec "+video_codec+" -acodec copy -preset ultrafast "+target_video
+	command = "ffmpeg -framerate "+str(fps)+" -i "+frame_name_tag+"%d"+img_extension+" -vcodec "+video_codec+" -acodec copy -preset "+preset+" -x265-params lossless="+str(loseless)+" "+target_video
+	subprocess.call(command, shell=True)	
+
+
+def compress_to_h265(video_in, video_out):
+	
+	import subprocess
+	import os
+
+	command = "ffmpeg -i "+video_in+" -vcodec libx265 -crf 28 "+video_out
+	subprocess.call(command, shell=True)	
+	
+
+def sharpen_video(source_video, target_video):
+	"""
+	Create a movie with a series of frames
+	frame_name_tag : if your frames are named frame_001.png, frame_name_tag="frame_"
+	target_video : the video that will be created
+	"""
+	import subprocess
+	import os
+	
+	command = "ffmpeg -i "+source_video+" -vf unsharp "+target_video
+	subprocess.call(command, shell=True)	
 
 
