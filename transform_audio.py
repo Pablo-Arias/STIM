@@ -443,56 +443,67 @@ def audio_peak_normalisation(source, target, max_peak=0.8):
 	soundfile.write(target, x, fs, f.subtype)
 
 
-def apply_fadeout(source, target, duration=0.05):
+def apply_fade(source, target, duration=0.05, fade_type = "out"):
+	"""
+	This functions create either fades in or outs in mono and stereo sounds.
+	Inputs:
+		source : audio file to transform 
+		target : target audio file to create
+		duration : duration of the fade in seconds 
+		fade_type : either "in" or "out"
+
+	Output:
+		No output. Create a target audio file.
+	"""
 	# convert to audio indices (samples)
+	from audio_analysis import get_nb_channels
+
 	x, fs = soundfile.read(str(source))
 	f = soundfile.SoundFile(source)
 
 	length = int(round(duration*fs))
-	end = x.shape[0]
-	start = end - length
 
-	# compute fade out curve
-	# linear fade
-	fade_curve = np.linspace(1.0, 0.0, length)
+	# compute fade curve
+	if fade_type == "in":
+		#Define fade in interval
+		end   = length
+		start = 0
+
+		# linear fade
+		fade_curve = np.linspace(0, 1.0, length)
+	
+	elif fade_type == "out":
+		#Define fade out interval
+		end = x.shape[0]
+		start = end - length
+		fade_curve = np.linspace(1.0, 0.0, length)
+	else:
+		exit("fade_type must be either 'in' or 'out'")
 
 	# apply the curve
-	ch_1 = x[:,0]
-	ch_2 = x[:,1]
+	nb_channels = get_nb_channels(source)
 
-	ch_1[start:end] = ch_1[start:end] * fade_curve
-	ch_2[start:end] = ch_2[start:end] * fade_curve
+	if nb_channels == 2:
+		#Separate channels
+		ch_1 = x[:,0]
+		ch_2 = x[:,1]
 
-	out = np.array([ch_1, ch_2])
-	out = np.transpose(out)
+		#Apply curve
+		ch_1[start:end] = ch_1[start:end] * fade_curve
+		ch_2[start:end] = ch_2[start:end] * fade_curve
+
+		#prepare output
+		out = np.array([ch_1, ch_2])
+		out = np.transpose(out)
+	
+	elif nb_channels == 1:
+		x[start:end] = x[start:end] * fade_curve
+		out = x
+	
+	else:
+		exit("This function only supports stereo and mono files")
 
 
 	soundfile.write(target, out, fs, f.subtype)
 
-
-
-def apply_fadein(source, target, duration=0.05):
-	# convert to audio indices (samples)
-	x, fs = soundfile.read(str(source))
-	f = soundfile.SoundFile(source)
-
-	length = int(duration*fs)
-	end = length
-
-
-	# compute fade out curve
-	# linear fade
-	fade_curve = np.linspace(1.0, 0.0, length)
-
-	# apply the curve
-	ch_1 = x[:,0]
-	ch_2 = x[:,1]
-
-	ch_1[0:end] = ch_1[0:end] * fade_curve
-	ch_2[0:end] = ch_2[0:end] * fade_curve
-
-	out = np.array([ch_1, ch_2])
-	out = np.transpose(out)
-
-	soundfile.write(target, out, fs, f.subtype)
 
