@@ -343,7 +343,7 @@ def convert_to_avi(source, target):
 	subprocess.call(command, shell=True)
 
 
-def extract_frames_video(source, folder, tag=""):
+def extract_frames_video(source, folder, tag="", fps=25):
 	"""
 	Extract the frames of a video
 	"""
@@ -352,7 +352,7 @@ def extract_frames_video(source, folder, tag=""):
 
 	os.mkdir(folder)
 
-	command = "ffmpeg -i "+source+" -r 4 "+folder+tag+"$filename%01d.bmp"
+	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d.bmp"
 	subprocess.call(command, shell=True)
 
 
@@ -367,12 +367,13 @@ def get_fps(source):
 	"""
 		Get fps of video file
 	"""
-	print("python3")
 	import subprocess
 	import os
 	import shlex
 	command = "ffprobe -v error -select_streams v -of default=noprint_wrappers=1:nokey=1 -show_entries stream=r_frame_rate " + source
-	#output  = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
+	output  = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
+
+	return output
 
 	#subprocess.call(command, shell=True)
 
@@ -382,11 +383,11 @@ def get_fps(source):
 
 	#p = subprocess.Popen(shlex.split(command), bufsize=1, universal_newlines=True)
 	#return p.communicate()
-	from subprocess import check_output
+	#from subprocess import check_output
 
-	x = check_output(["ffprobe", "-v", "error", "-select_streams", "v", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries stream=r_frame_rate", source],shell=True,stderr=subprocess.STDOUT)
+	#x = check_output(["ffprobe", "-v", "error", "-select_streams", "v", "-of", "default=noprint_wrappers=1:nokey=1", "-show_entries stream=r_frame_rate", source],shell=True,stderr=subprocess.STDOUT)
 
-	return x
+	#return x
 
 
 def color_correction(source_video, target_video, gamma=1.5, saturation =1.3):
@@ -405,7 +406,8 @@ def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, 
 	Create a movie with a series of frames
 	frame_name_tag : if your frames are named frame_001.png, frame_name_tag="frame_"
 	target_video : the video that will be created
-	video_codec : specifiy the video copy flag to pass to ffmpef. 
+	video_codec : specifiy the video copy flag to pass to ffmpeg. 
+
 	Possiblities:
 		"copy" : will copy frames, videos will be very big, but generation will bef ast
 		"libx265" : generation will be slow but videos will be small
@@ -444,4 +446,106 @@ def sharpen_video(source_video, target_video):
 	command = "ffmpeg -i "+source_video+" -vf unsharp "+target_video
 	subprocess.call(command, shell=True)	
 
+def combine_2_videos(left, right, output):
+	"""
+		Create a movie with 2 movies
 
+	"""
+	import subprocess
+
+	#command = "ffmpeg -i "+left+" -i "+right+" -filter_complex \"[0][1]scale2ref=w=oh*mdar:h=ih[left][right];[left][right]hstack\" "+output
+
+	#command = "ffmpeg -i "+left+" -i "+ right+" -filter_complex \"[0]scale=175:100:force_original_aspect_ratio=decrease,pad=175:100:-1:-1:color=gray,setsar=1[left];[1]scale=175:100:force_original_aspect_ratio=decrease,pad=175:100:-1:-1:color=gray,setsar=1[right];[left][right]hstack\" "+ output
+
+	command = "ffmpeg -i "+left+" -i "+right+" -filter_complex \"[0][1]scale2ref=w=oh*mdar:h=ih[left][right];[left][right]hstack\" "+ output
+
+	subprocess.call(command, shell=True)
+
+
+def combine_videos( tl, tr, bl, br,output, audios = [] ):
+	"""
+		Create a movie with 4 movies!
+		tl : top left; tr : top right, bl : bottom left; br : bottom_right
+
+	"""
+	import subprocess
+	import os
+	
+	if audios != []:
+		master_audio = "master_audio_aux_file.wav"
+		combine_audio(audios, master_audio)
+		#command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+bl+" -i "+ master_audio +" -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -c:a copy -shortest "+ output
+
+		command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+br+" -i "+master_audio+" -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -map 4:a -c:a copy -shortest "+output
+
+	else :
+		command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+bl+" -ac 2 -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -c:a copy -shortest "+ output
+
+	subprocess.call(command, shell=True)
+
+	#delete master audio
+	if audios != []:
+		os.remove(master_audio)
+
+
+
+
+def combine_audio(files, target_audio, pre_normalisation=True):
+    """
+        input : file names in an array (you can use videos!!)
+        Combine audio_files into one
+    """
+    import soundfile
+    from transform_audio import wav_to_mono
+    import os
+    import numpy as np
+
+    #Extract audio from video and convert to mono
+    audio_files = []
+    for cpt, file in enumerate(files):
+        #extract audio
+        audio = str(cpt)+"_aux_audio_1439.wav"
+        audio_files.append(audio)
+        extract_audio(file, audio)
+
+        #To mono
+        wav_to_mono(audio, audio)
+    
+    #read audios
+    raw_audios = []
+    for file in audio_files:
+        #read audio
+        x, fs = soundfile.read(file)
+        
+        #normalize loudness, if needed
+        if pre_normalisation:
+            x = x / np.max(x)
+            
+        raw_audios.append(x)
+
+    #Pad difference
+    lengths = [len(i) for i in raw_audios]
+    
+    #Find longer file
+    max_value = max(lengths)
+    max_index = lengths.index(max_value)
+    
+    #pad audio
+    paded_audio = []
+    for raw_audio in raw_audios:
+        diff = abs(len(raw_audio) - max_value)
+        pad = [0.0 for i in range(diff)]
+        pad = np.asarray(pad)
+        paded_audio.append(np.concatenate([raw_audio, pad]))
+    
+    paded_audio = np.sum(paded_audio, axis=0)
+    
+    #normalize
+    paded_audio = paded_audio/ np.max(paded_audio)
+    
+    #Export audio
+    soundfile.write(target_audio, paded_audio , fs)
+    
+    #delete files
+    for file in audio_files:
+        os.remove(file)

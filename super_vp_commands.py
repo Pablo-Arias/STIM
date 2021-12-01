@@ -245,7 +245,7 @@ def generate_fft_analysis(audio_file, analysis = "", wait = True):
 
 
 # ---------- transpose_sound
-def transpose_sound(source_sound, nb_cents, target_sound):
+def transpose_sound(source_sound, nb_cents, target_sound, wait = True, env_warp_ws=512, lpc_order=25, win_oversampling = 64, fft_oversampling=2):
 	"""
 	transpose source sound from number of cents and generate target_sound
 
@@ -253,11 +253,44 @@ def transpose_sound(source_sound, nb_cents, target_sound):
 	target_sound: audio file to be created
 	nb_cents : number of cents
 	"""	
-	parameters =  "-t -A -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
+
+	env_warp_ws      = str(env_warp_ws)
+	lpc_order        = str(lpc_order)
+	fft_oversampling = str(int(fft_oversampling))
+	win_oversampling = str(win_oversampling)
+
+	parameters =  "-t -Afft "+lpc_order+" -M"+env_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)
 
+	if wait:
+		p.wait() #wait
+
+
+
+# ---------- transpose_sound
+def env_transpose(source_sound, target_sound, nb_cents, wait = True, env_warp_ws=512, lpc_order=25 , win_oversampling = 64, fft_oversampling=2):
+	"""
+	transpose source sound from number of cents and generate target_sound
+
+	source_sound: audio source file
+	target_sound: audio file to be created
+	nb_cents : number of cents
+	"""	
+
+	env_warp_ws      = str(env_warp_ws)
+	lpc_order        = str(lpc_order)
+	fft_oversampling = str(int(fft_oversampling))
+	win_oversampling = str(win_oversampling)
+
+	parameters =  "-t -Afft "+lpc_order+" -M"+env_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -transenv "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
+	cmd 		= super_vp_path + " " + parameters
+	args 		= shlex.split(cmd)
+	p 			= subprocess.Popen(args)
+
+	if wait:
+		p.wait() #wait
 
 # ---------- freq_warp
 def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=25 ,wait = True, warp_method="lpc", win_oversampling = 64, fft_oversampling=2):
@@ -317,8 +350,8 @@ def stretch_sound_to_target_duration(source_sound, target_sound, target_duration
 	source_sound: audio source file
 	target_sound: audio file to be created
 	"""	
-	from scikits.audiolab import wavread 
-	x, fs, enc 		= wavread(str(source_sound))	
+	import soundfile
+	x, fs = soundfile.read(source_sound)
 
 	source_sound_duration = len(x)/float(fs)
 	change_factor = target_duration/source_sound_duration

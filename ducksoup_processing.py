@@ -25,7 +25,9 @@ def pair_videos(source_folder, target_folder, video_extension, audio_extension, 
 	Usage example : pair_videos(source_folder = "ducksoup/mirror/", target_folder = "ducksoup/paired/", video_extension = ".mts", audio_extension = ".ogg")
 
 	"""
+	print(source_folder+"*"+pairing_style["video"]+video_extension)
 	for file in glob.glob(source_folder+"*"+pairing_style["video"]+video_extension):
+		print("processing : "+ file)
 		file_tag = get_file_without_path(file)
 		date, hour, _, part_id, _, other_id, _, _, input_type, manip = file_tag.split("-")
 
@@ -37,6 +39,7 @@ def pair_videos(source_folder, target_folder, video_extension, audio_extension, 
 			continue
 		corresp_audio = corresp_audio[0]
 		replace_audio(file, corresp_audio, target_folder + get_file_without_path(file, with_extension=True))
+		print("done")
 
 
 		
