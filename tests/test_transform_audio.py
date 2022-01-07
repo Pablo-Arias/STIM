@@ -21,7 +21,7 @@ class Test_transform_audio(unittest.TestCase):
 		f = soundfile.SoundFile(self.aux_file)
 		
 		#Test that file exists
-		self.assertTrue(os.path.exists(self.aux_file))		
+		self.assertTrue(os.path.exists(self.aux_file))
 
 		#Test that number of channels is correct
 		self.assertEqual(f.channels, 1)

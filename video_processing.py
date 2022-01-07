@@ -165,6 +165,8 @@ def extract_sentences_in_video(source_name, target_folder, rms_threshold = -50, 
 def extract_sub_video_sentences(source_name, target_name, start, length):
 	"""
 	Takes a sub video in source_name begining at start and ending at end
+	The start time should be in this format: 00:24:00
+	Length in seconds.
 	"""
 
 	import subprocess
@@ -353,6 +355,12 @@ def extract_frames_video(source, folder, tag="", fps=25):
 	os.mkdir(folder)
 
 	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d.bmp"
+	subprocess.call(command, shell=True)
+
+def change_frame_rate(source, target_fps, output):
+	import subprocess
+	import os
+	command = "ffmpeg -i "+source+" -filter:v fps="+str(target_frame_rate) +" " +output
 	subprocess.call(command, shell=True)
 
 

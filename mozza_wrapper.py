@@ -21,6 +21,10 @@ def create_deformation_file(container_folder, source, model, output, wait=True):
 		p.wait() #wait	
 
 def transform_img_with_mozza(container_folder,  source, target, wait=True, deformation_file="./default.dfm", alpha=1.0, face_thresh=0.25 , overlay=False , beta=0.1, fc=5.0):	
+	"""
+		Transform image with mozza
+	"""
+
 	cmd 		= "docker run -v "+container_folder+":/data creamlab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! jpegenc ! filesink location=/data/"+target
 	args 		= shlex.split(cmd)
 
@@ -62,13 +66,18 @@ def transform_video_with_mozza(container_folder,  source, target, wait=True, def
 #transform_img_with_mozza(container_folder = container_folder,  source = source, target= target, deformation_file=deformation_file, alpha=1, face_thresh=0.25 , overlay=False , beta=0.1, fc=5.0)
 
 # #Create deformation
-container_folder = "/Users/arias/Desktop/container"
-source = "1F_1.mp4"
-source = "1_25_V-A-.avi"
-target = "output.avi"
-deformation_file = "test.dfm"
+
+if __name__ == '__main__':
+	container_folder = "/Users/arias/Desktop/container"
+	source = "1F_1.mp4"
+	source = "1_25_V-A-.avi"
+	target = "output.avi"
+	deformation_file = "test.dfm"
 
 
-transform_video_with_mozza(container_folder = container_folder,  source = source, target= target, deformation_file=deformation_file, alpha=-1.0, face_thresh=0.25 , overlay=False , beta=0.1, fc=5.0)
+	transform_video_with_mozza(container_folder = container_folder,  source = source, target= target, deformation_file=deformation_file, alpha=-1.0, face_thresh=0.25 , overlay=False , beta=0.1, fc=5.0)
 
 
+
+
+	
