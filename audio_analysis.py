@@ -26,7 +26,8 @@ from six.moves import range
 from functools import reduce
 import contextlib
 import collections
-
+import parselmouth
+from parselmouth.praat import call
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -161,7 +162,7 @@ def get_RMS_over_time(audio_file, window_size = 1024, in_db = True):
 	time_tags = []
 	while (begin + window_size) < len(sound_in):
 		data = sound_in[begin : begin + window_size]
-		time_tag = (begin + (window_size / 2)) / np.float(fs)
+		time_tag = (begin + (window_size / 2)) / float(fs)
 		
 		values.append(get_rms_from_data(data, in_db = in_db))
 		time_tags.append(time_tag)
@@ -259,8 +260,8 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 
 	#If harmonicity threshold is defined, clean with harm thresh
 	if harmonicity_threshold:
-		times =  [np.float(x) for x in times]
-		f0s   = [np.float(x) for x in f0s]
+		times =  [float(x) for x in times]
+		f0s   = [float(x) for x in f0s]
 		
 		from bisect import bisect_left
 		f0_times, f0_harm, _ = get_f0(audio_file = Fname)
@@ -301,6 +302,110 @@ def get_pitch_std(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  35
 	times, f0s  = Extract_ts_of_pitch_praat(Fname=Fname, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
 
 	return np.nanstd(f0s)
+
+
+def get_pulse_features(sound, f0min=75, f0max=450, time_step=0.01, silence_threshold=0.1, periods_per_window=1.0, start=0, stop=0, period_floor=0.0001, period_ceiling = 0.02, max_period_factor=1.3):
+	
+	
+	shim_df = get_shimmer(sound
+	                      , f0min = f0min
+	                      , f0max = f0max
+	                     )
+
+	hnr_df  = get_hnr(sound
+	                  , time_step          = time_step
+	                  , f0min              = f0min
+	                  , silence_threshold  = silence_threshold
+	                  , periods_per_window = periods_per_window
+	                  , start              = start
+	                  , stop               = stop
+	                 )
+
+	jitt_df = get_jitter(sound
+	                     , f0min  = f0min
+	                     , f0max  = f0max
+	                     , start  = start
+	                     , stop   = stop
+	                     , period_floor   = period_floor
+	                     , period_ceiling = period_ceiling
+	                     , max_period_factor = max_period_factor
+	                    )
+	
+	pulses_df = jitt_df.merge(shim_df    , on ="sound")
+	pulses_df = pulses_df.merge(hnr_df   , on ="sound")
+	return pulses_df
+
+
+#from : https://osf.io/qe9k4/
+def get_jitter(sound, f0min=75, f0max=450, start=0, stop=0, period_floor=0.0001, period_ceiling=0.02, max_period_factor=1.3):
+	"""
+	start and stop = 0 means analyse all sound. In seconds.
+	period floor   : In seconds. The shortest possible interval that will be used in the computation of jitter, in seconds. 
+	If an interval is shorter than this, it will be ignored in the computation of jitter (and the previous and next intervals will not be regarded as consecutive). 
+	This setting will normally be very small, say 0.1 ms.
+
+	period ceiling : In seconds. The longest possible interval that will be used in the computation of jitter, in seconds. 
+	If an interval is longer than this, it will be ignored in the computation of jitter (and the previous and next intervals will not be regarded as consecutive). For example, if the minimum frequency of periodicity is 50 Hz, set this setting to 0.02 seconds; intervals longer than that could be regarded as voiceless stretches and will be ignored in the computation.
+
+	Maximum period factor : the largest possible difference between consecutive intervals that will be used in the computation of jitter. 
+	If the ratio of the durations of two consecutive intervals is greater than this, this pair of intervals will be ignored in the computation of jitter (each of the intervals could still take part in the computation of jitter in a comparison with its neighbour on the other side).
+
+
+	Check the documentation here : https://www.fon.hum.uva.nl/praat/manual/PointProcess__Get_jitter__local____.html
+	"""
+	df_aux = pd.DataFrame()
+	praat_sound         = parselmouth.Sound(sound) # read the sound
+	pointProcess        = call(praat_sound, "To PointProcess (periodic, cc)", f0min, f0max)
+	localJitter         = call(pointProcess, "Get jitter (local)"           , start, stop, period_floor, period_ceiling, max_period_factor)
+	localabsoluteJitter = call(pointProcess, "Get jitter (local, absolute)" , start, stop, period_floor, period_ceiling, max_period_factor)
+	rapJitter           = call(pointProcess, "Get jitter (rap)"             , start, stop, period_floor, period_ceiling, max_period_factor)
+	ppq5Jitter          = call(pointProcess, "Get jitter (ppq5)"            , start, stop, period_floor, period_ceiling, max_period_factor)
+	ddpJitter           = call(pointProcess, "Get jitter (ddp)"             , start, stop, period_floor, period_ceiling, max_period_factor)
+
+	#Collect data
+	df_aux["sound"]                        = [sound]
+	df_aux["localJitter"]                  = [localJitter]
+	df_aux["localabsoluteJitterrapJitter"] = [localabsoluteJitter]
+	df_aux["rapJitter"]                    = [rapJitter]
+	df_aux["ppq5Jitter"]                   = [ppq5Jitter]
+	df_aux["ddpJitter"]                    = [ddpJitter]
+
+	return df_aux
+
+def get_hnr(sound, time_step=0.01, f0min=75, silence_threshold=0.1, periods_per_window=1.0, start=0, stop=0):
+	"""
+	if both start and stop = 0, compute descriptor for all sound
+	"""
+	praat_sound       = parselmouth.Sound(sound) # read the sound
+	harmonicity = call(praat_sound, "To Harmonicity (cc)", time_step, f0min, silence_threshold, periods_per_window)
+	hnr         = call(harmonicity, "Get mean"              , start, stop)
+	
+	df_aux = pd.DataFrame()
+	df_aux["sound"] = [sound]
+	df_aux["hnr"] = [hnr]
+
+	return df_aux    
+    
+def get_shimmer(sound, f0min = 74, f0max = 350):
+	praat_sound          = parselmouth.Sound(sound) # read the sound
+	pointProcess        = call(praat_sound, "To PointProcess (periodic, cc)", f0min, f0max)
+	localShimmer        = call([praat_sound, pointProcess], "Get shimmer (local)"    , 0, 0, 0.0001, 0.02, 1.3, 1.6)
+	localdbShimmer      = call([praat_sound, pointProcess], "Get shimmer (local_dB)" , 0, 0, 0.0001, 0.02, 1.3, 1.6)
+	apq3Shimmer         = call([praat_sound, pointProcess], "Get shimmer (apq3)"     , 0, 0, 0.0001, 0.02, 1.3, 1.6)
+	aqpq5Shimmer        = call([praat_sound, pointProcess], "Get shimmer (apq5)"     , 0, 0, 0.0001, 0.02, 1.3, 1.6)
+	apq11Shimmer        = call([praat_sound, pointProcess], "Get shimmer (apq11)"    , 0, 0, 0.0001, 0.02, 1.3, 1.6)
+	ddaShimmer          = call([praat_sound, pointProcess], "Get shimmer (dda)"      , 0, 0, 0.0001, 0.02, 1.3, 1.6)
+
+	df_aux = pd.DataFrame()
+	df_aux["sound"]          = [sound]
+	df_aux["localShimmer"]   = [localShimmer]
+	df_aux["localdbShimmer"] = [localdbShimmer]
+	df_aux["apq3Shimmer"]    = [apq3Shimmer]
+	df_aux["aqpq5Shimmer"]   = [aqpq5Shimmer]
+	df_aux["apq11Shimmer"]   = [apq11Shimmer] 
+	df_aux["ddaShimmer"]     = [ddaShimmer]
+
+	return df_aux
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -545,7 +650,7 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 	freqs_df = pd.DataFrame()
 	bws_df = pd.DataFrame()
 	for line in content:
-		line = [ np.nan if x == b'--undefined--' else np.float(x) for x in line.split()]
+		line = [ np.nan if x == b'--undefined--' else float(x) for x in line.split()]
 		
 		frequency = {}
 		bandwidth = {}
@@ -614,7 +719,7 @@ def get_mean_formant_praat_harmonicity(audio_file, time_step=0.001, window_size=
 						   Check praat's documentation to know more
 		pre_emph: pre emphasis: check praat documentation on formant estimation
 		harmonicity_threshold: harmonicity threshold to exclude all the values below a certain harmonic threshold
-		formant_method: the method to use to mean across formants. Either 'mean' or 'median'.
+		formant_method: the method to use to mean across formants. Either 'mean' or 'median' .
 
 		Output;
 			Dataframe with mean formant frequencies and bandwidths
@@ -644,14 +749,40 @@ def get_mean_formant_praat_harmonicity(audio_file, time_step=0.001, window_size=
 		bws_df 			 = bws_df.loc[bws_df["harmonicity"]>harmonicity_threshold]
 		
 	if formant_method=='median':
-		bws_df 	 = bws_df.reset_index().groupby(["Formant"]).median().reset_index()
-		freqs_df = freqs_df.reset_index().groupby(["Formant"]).median().reset_index()
-	elif formant_method=='mean':
-		bws_df 	 = bws_df.reset_index().groupby(["Formant"]).mean().reset_index()
-		freqs_df = freqs_df.reset_index().groupby(["Formant"]).mean().reset_index()
-	else:
-		raise ValueError("formant_method should be either 'mean' or 'median' ")
+		mean_bws_df 	   = bws_df.reset_index().groupby(["Formant"]).median().reset_index()
+		bws_std_df 	       = bws_df.reset_index().groupby(["Formant"]).std()
+		bws_std_df.drop(["time"], axis=1, inplace=True)
+		bws_std_df.columns = [x+"_std" for x in bws_std_df.columns]
+		bws_std_df.reset_index(inplace=True)
+		bws_df             = mean_bws_df.merge(bws_std_df, on = ["Formant"])
+		
+		#frequencies
+		mean_freqs_df        = freqs_df.reset_index().groupby(["Formant"]).median().reset_index()
+		freqs_std_df 	     = freqs_df.reset_index().groupby(["Formant"]).std()
+		freqs_std_df.drop(["time"], axis=1, inplace=True)
+		freqs_std_df.columns = [x+"_std" for x in freqs_std_df.columns]
+		freqs_std_df.reset_index(inplace=True)
+		freqs_df = mean_freqs_df.merge(freqs_std_df, on = ["Formant"])
 
+	elif formant_method=='mean':
+		mean_bws_df 	   = bws_df.reset_index().groupby(["Formant"]).mean().reset_index()
+		bws_std_df 	       = bws_df.reset_index().groupby(["Formant"]).std()
+		bws_std_df.drop(["time"], axis=1, inplace=True)
+		bws_std_df.columns = [x+"_std" for x in bws_std_df.columns]
+		bws_std_df.reset_index(inplace=True)
+		bws_df             = mean_bws_df.merge(bws_std_df, on = ["Formant"])
+		
+		#frequencies
+		mean_freqs_df        = freqs_df.reset_index().groupby(["Formant"]).mean().reset_index()
+		freqs_std_df 	     = freqs_df.reset_index().groupby(["Formant"]).std()
+		freqs_std_df.drop(["time"], axis=1, inplace=True)
+		freqs_std_df.columns = [x+"_std" for x in freqs_std_df.columns]
+		freqs_std_df.reset_index(inplace=True)
+		freqs_df = mean_freqs_df.merge(freqs_std_df, on = ["Formant"])
+	
+
+	else:
+		raise ValueError("formant_method should be either 'mean' or 'median'")
 
 	return freqs_df, bws_df
 
@@ -694,6 +825,8 @@ def analyse_audio_folder(source_folder
 						, speed_of_sound		= 335
 						, time_step				= 0.001
 						, window_size			= 0.01 
+						, pitch_floor			= 75
+						, pitch_ceiling			= 350
 						, nb_formants			= 6
 						, nb_formants_fd		= 5
 						, max_formant_freq		= 5500
@@ -761,6 +894,12 @@ def analyse_audio_folder(source_folder
 			if 'pre_emph' 			   in list(parameters.keys()): pre_emph              = parameters['pre_emph'] 			   
 
 
+		#Get sound duratio
+		sound_duration = get_sound_duration(file)
+		if sound_duration < time_step:
+			print("not analysing " + file+ " because it's shorter than the time step")
+			continue
+
 		#Get formant frequencies
 		df, db = get_mean_formant_praat_harmonicity(file 
 											, time_step        = time_step
@@ -772,20 +911,34 @@ def analyse_audio_folder(source_folder
 											, formant_method		  = formant_method
 											)
 
+		#Formants
+		formants     = df["Frequency"].values
+		formants_std = df["Frequency_std"].values
 
-		formants = df["Frequency"].values
+		#Bandwidths
+		bws     = db["Bandwidth"].values
+		bws_std = db["Bandwidth_std"].values
 
-		#compute formant dispersion
-		fd = 0
-		for i in range(1, nb_formants_fd):
-			fd = fd + formants[i] - formants[i-1]
-		fd = fd / (nb_formants_fd -1)
 
-		#get mean pitch
-		pitch_mean = get_mean_pitch_praat(os.path.abspath(file))		
+		#compute formant dispersion & vtl
+		if len(formants) >= nb_formants_fd:
+			fd = 0
+			for i in range(1, nb_formants_fd):
+				fd = fd + formants[i] - formants[i-1]
+			fd = fd / (nb_formants_fd -1)
 
-		#Compute vocal tract length following Fitch 1997 formulae
-		vtl = speed_of_sound/(2*fd)
+			#Compute vocal tract length following Fitch 1997 formulae
+			vtl = speed_of_sound/(2*fd)
+
+		else:
+			fd  = float("nan")
+			vtl = float("nan")
+
+		#pitch descriptors
+		times, f0s = Extract_ts_of_pitch_praat(file, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
+
+		pitch_mean = np.nanmean(f0s)
+		pitch_std = np.nanstd(f0s)
 
 		#compute mean centroid
 		centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = sc_rms_thresh, window_size = sc_ws)
@@ -798,14 +951,45 @@ def analyse_audio_folder(source_folder
 		aux_dict["CGS"] = centroid
 		
 		#Add formant information
-		for index in range(0, nb_formants):
-			aux_dict["F"+str(index+1)] = formants[index]
+		if len(formants) == nb_formants:
+			#Add formants
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)] = formants[index]
+
+			#Add formants std
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)+"_std"] = formants_std[index]
+
+			#Add Bandwidths
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)+"bw"] = bws[index]
+			
+			#Add Bandwidths
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)+"bw_std"] = bws_std[index]
+		else:
+			#Add nans everywhere
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)] = float("nan")
+
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)+"_std"] = float("nan")
+			
+			#Add Bandwidths
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)+"bw"] = float("nan")
+			
+			#Add Bandwidths
+			for index in range(0, nb_formants):
+				aux_dict["F"+str(index+1)+"bw_std"] = float("nan")
+
 
 		#Add other descriptors
 		aux_dict["pitch_mean"]   	= pitch_mean
+		aux_dict["pitch_std"]   	= pitch_std
 		aux_dict["formant_disp"] 	= fd
 		aux_dict["vtl"]   		 	= vtl
-		aux_dict["sound_duration"]  = get_sound_duration(file)
+		aux_dict["sound_duration"]  = sound_duration
 		
 		#convert dict to dataframe
 		aux_df = pd.DataFrame(aux_dict, index=[cpt])

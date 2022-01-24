@@ -9,6 +9,11 @@
 from __future__ import absolute_import
 def get_super_vp_path():
 	import glob, os
-	AudioSculpt_version = glob.glob("/Applications/AudioSculpt*/AudioSculpt*.app/Contents/MacOS/supervp")[0]
-	AudioSculpt_version = AudioSculpt_version.replace(' ', "\ ")# = os.path.normpath(AudioSculpt_version)
-	return AudioSculpt_version
+	svp_version = glob.glob("/Applications/SuperVP.app/Contents/MacOS/*")[0]
+
+	svp_version = svp_version.replace(' ', "\ ")# = os.path.normpath(AudioSculpt_version)
+	return svp_version
+
+
+if __name__ == "__main__":
+	print(get_super_vp_path())

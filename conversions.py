@@ -21,7 +21,7 @@ def hz_to_cents(f0, f1):
 	if np.isnan(f0) or np.isnan(f1):
 		return np.nan
 
-	return 1200* np.log2(f1/np.float(f0))
+	return 1200* np.log2(f1/float(f0))
 
 
 #name conversions
