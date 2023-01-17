@@ -7,6 +7,8 @@
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 from __future__ import absolute_import
+
+
 def get_super_vp_path():
 	import glob, os
 	from sys import platform
@@ -14,7 +16,7 @@ def get_super_vp_path():
     	#Todo
 		svp_version = "" #todo
 		print("missing linux supervp")
-		
+
 	elif platform == "darwin":
     	# OS X
 		svp_version = glob.glob("/Applications/SuperVP/SuperVP.app/Contents/MacOS/*")[0]

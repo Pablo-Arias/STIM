@@ -28,6 +28,11 @@ import collections
 import parselmouth
 from parselmouth.praat import call
 
+from praat_path import get_praat_path
+
+#global
+praat_path = get_praat_path()
+
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ----------------- Spectral centroid
@@ -237,7 +242,7 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 	import os	
 	Fname = os.path.abspath(Fname)
 
-	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat'
+	out = subprocess.check_output([get_praat_path()
 									, "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat')
 									, Fname
 									, str(time_step)
@@ -632,7 +637,7 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 	audio_file = os.path.abspath(audio_file)
 
 	#Call sub process
-	out = subprocess.check_output(['/Applications/Praat.app/Contents/MacOS/Praat'
+	out = subprocess.check_output([praat_path
 		, "--run"
 		, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat')
 		, audio_file
