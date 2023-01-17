@@ -176,7 +176,7 @@ def plot_spectrogram(audio_file, window_size = 2048, nfft = 256 , noverlap = 255
 
 
 	# Force sound_in to have zero mean.
-	sound_in, fs, enc = wavread(audio_file)
+	sound_in, fs = soundfile.read(audio_file)
 
 	#compute gaussian spectrogram
 	f, t, Sxx = signal.spectrogram(sound_in, fs, nperseg = window_size 

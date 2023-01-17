@@ -24,8 +24,10 @@ from conversions import lin2db, db2lin
 
 def wav_to_mono(source, target):
 	"""
-	source : source audio file
-	target : target audio file
+	|Input:
+	|	source : source audio file
+	|	target : target audio file
+	
 	"""
 	f = soundfile.SoundFile(source)
 
@@ -411,49 +413,72 @@ def normalize_folder_loudness(folder, target_folder, dbA=70):
 	eng.quit()
 
 
-def change_file_loudness(file, target_file, dbA=70):
+def change_file_loudness(file, target_file, db_lufs=-15):
 	"""
-	This functionc calls a matlab script for normalising transforming a file to a target loudness
-	folder : the folder where you have you files
-	target_folder : the folder where you want your files to be saved
-	dbA : target dbA for new file
+	|	This functionc calls a matlab script for normalising transforming a file to a target loudness
+	|	folder : the folder where you have you files
+	|	target_folder : the folder where you want your files to be saved
+	|   db_lufs : target db_lufs for new file
 
-	warning : only works with mono file and only reads wav files, for now
+	|	Warning : only works with mono file and only reads wav files, for now
 	"""
-	import sys
-	import matlab.engine
-	eng = matlab.engine.start_matlab()
-	eng.addpath("/Users/arias/Documents/Developement/Matlab/",nargout=0)
-	eng.file_to_loundness(file,target_file, dbA , nargout=0)
-	eng.quit()
+
+	import soundfile as sf
+	import pyloudnorm as pyln
+
+	data, rate = sf.read(file) # load audio
+
+	# measure the loudness first 
+	meter    = pyln.Meter(rate) # create BS.1770 meter
+	loudness = meter.integrated_loudness(data)
+
+	# loudness normalize audio to -25 dB LUFS
+	loudness_normalized_audio = pyln.normalize.loudness(data, loudness, db_lufs)
+
+	sf.write(file = target_file, data=loudness_normalized_audio, samplerate=rate)
+
+
+	#Old function using matlab engine
+	#import sys
+	#import matlab.engine
+	#eng = matlab.engine.start_matlab()
+	#eng.addpath("/Users/arias/Documents/Developement/Matlab/",nargout=0)
+	#eng.file_to_loundness(file,target_file, dbA , nargout=0)
+	#eng.quit()
 
 
 
-def audio_peak_normalisation(source, target, max_peak=0.8):
+def audio_peak_normalisation(source, target, dB=-1):
 	"""
-	This is a quick and simple peak normalsiation made by Pablo Arias
+	|Input:
+	|	source : input mono audio file
+	|	target : target file
+	|
+	|	This is a quick and simple peak normalsiation made by Pablo Arias
+	| 	Peak normalize audio to X dB
+
 	"""
+	import pyloudnorm as pyln
+
 	x, fs = soundfile.read(str(source))
 	f = soundfile.SoundFile(str(source))
 	
-	mult_fact  = max_peak/np.max(abs(x))
-
-	x= x*mult_fact
-
-	soundfile.write(target, x, fs, f.subtype)
+	peak_normalized_audio = pyln.normalize.peak(x, dB)
+	
+	soundfile.write(target, peak_normalized_audio, fs, f.subtype)
 
 
 def apply_fade(source, target, duration=0.05, fade_type = "out"):
 	"""
-	This functions create either fades in or outs in mono and stereo sounds.
-	Inputs:
-		source : audio file to transform 
-		target : target audio file to create
-		duration : duration of the fade in seconds 
-		fade_type : either "in" or "out"
-
-	Output:
-		No output. Create a target audio file.
+	|This functions create either fades in or outs in mono and stereo sounds.
+	|Inputs:
+	|	source : audio file to transform 
+	|	target : target audio file to create
+	|	duration : duration of the fade in seconds 
+	|	fade_type : either "in" or "out"
+	|
+	|Output:
+	|	No output. Create a target audio file.
 	"""
 	# convert to audio indices (samples)
 	from audio_analysis import get_nb_channels

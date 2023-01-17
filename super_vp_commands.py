@@ -447,4 +447,18 @@ def denoise_sound(source_sound, target_sound, gain_reduction =10, amp_threshold 
 	#delete noise key
 	os.remove(noise_sdif)
 
+def transient_detection_analysis(audio_file, analysis = "", wait = True):
+	if analysis== "":
+		file_tag = os.path.basename(audio_file)
+		file_tag = os.path.splitext(file_tag)[0]
+		analysis = os.path.dirname(audio_file)+ "/" + file_tag + ".txt"
+
+	parameters 	=  "-S"+audio_file+"  -A -Np4 -M0.0500000007450581s -oversamp 8 -Whanning -OT " + analysis
+	cmd 		= super_vp_path + " " + parameters
+	args 		= shlex.split(cmd)
+	p 			= subprocess.Popen(args)	
+	if wait:
+		p.wait() #wait
+
+
 	

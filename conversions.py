@@ -35,3 +35,6 @@ def get_file_without_path(file_name, with_extension=False):
 		base = os.path.splitext(base)[0]
 	
 	return base
+
+def get_file_path(file_name):
+	return "/".join(file.split("/")[:-1])

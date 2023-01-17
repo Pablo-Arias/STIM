@@ -9,7 +9,7 @@
 from __future__ import absolute_import
 def get_super_vp_path():
 	import glob, os
-	svp_version = glob.glob("/Applications/SuperVP.app/Contents/MacOS/*")[0]
+	svp_version = glob.glob("/Applications/SuperVP/SuperVP.app/Contents/MacOS/*")[0]
 
 	svp_version = svp_version.replace(' ', "\ ")# = os.path.normpath(AudioSculpt_version)
 	return svp_version

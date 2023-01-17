@@ -15,6 +15,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 import sys
 from transform_audio import extract_sentences_tags
+import cv2
+from datetime import datetime
 
 def extract_audio(video_file, target_name):
 	"""
@@ -106,7 +108,9 @@ def get_movie_stream(video):
 	output = subprocess.check_output(command, shell=True)
 	return output
 
-def get_movie_duration(video):
+
+
+def get_movie_duration(video, in_seconds=True):
 	"""
 	Get the duration of video
 
@@ -119,7 +123,17 @@ def get_movie_duration(video):
 
 	command = "ffmpeg -i "+video+" 2>&1 | grep \"Duration\""
 	output = subprocess.check_output(command, shell=True)
-	return output
+	result = output
+
+	if in_seconds:	
+		output      = str(output)
+		f_dur       = output.split(" ")[3][:-1]
+		f_dur       = datetime.strptime(f_dur, "%H:%M:%S.%f")
+		a_timedelta = f_dur - datetime(1900, 1, 1)
+		result      = a_timedelta.total_seconds()
+	
+	return result
+
 	
 def extract_sentences_in_video(source_name, target_folder, rms_threshold = -50, WndSize = 16384, overlap = 8192):
 	"""
@@ -345,18 +359,6 @@ def convert_to_avi(source, target):
 	subprocess.call(command, shell=True)
 
 
-def extract_frames_video(source, folder, tag="", fps=25):
-	"""
-	Extract the frames of a video
-	"""
-	import subprocess
-	import os
-
-	os.mkdir(folder)
-
-	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d.bmp"
-	subprocess.call(command, shell=True)
-
 def change_frame_rate(source, target_fps, output):
 	import subprocess
 	import os
@@ -495,9 +497,6 @@ def combine_videos( tl, tr, bl, br,output, audios = [] ):
 	if audios != []:
 		os.remove(master_audio)
 
-
-
-
 def combine_audio(files, target_audio, pre_normalisation=True):
     """
         input : file names in an array (you can use videos!!)
@@ -557,3 +556,74 @@ def combine_audio(files, target_audio, pre_normalisation=True):
     #delete files
     for file in audio_files:
         os.remove(file)
+
+def extract_frames_video(source, folder, tag="", fps=25):
+	"""
+	Extract the frames of a video
+	"""
+	import subprocess
+	import os
+
+	os.mkdir(folder)
+
+	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d.bmp"
+	subprocess.call(command, shell=True)
+
+
+def open_cap(file)       : return cv2.VideoCapture(file)
+
+
+
+def extract_frame(video, target_file, frame_nb):     
+	"""
+		Extract frame from a video.
+		To extract several frames at once see extract_frames
+	"""
+	import matplotlib.pyplot as plt
+
+	cap   = open_cap(video)
+	cap.set(1,frame_nb)
+	ret, frame = cap.read()
+	frames.append(frame)
+    
+	#write frame
+	ax = plt.subplot()
+	plt.axis('on')
+	ax = ax.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+	ax.axes.get_xaxis().set_visible(False)
+	ax.axes.get_yaxis().set_visible(False)
+
+	#save fig
+	plt.savefig(target_file)
+
+
+
+def extract_frames(video, target_folder, frame_nbs = []):
+	"""
+	| Description: 
+	| 	Extract frames specified in the frame_nbs array, from a video into a target folder.
+		
+	"""
+	import matplotlib.pyplot as plt	
+
+	cap   = open_cap(video)
+	
+	for frame_nb in frame_nbs:
+		cap.set(1,frame_nb)
+		ret, frame = cap.read()
+	    
+		#write frame
+		plt.axis('on')
+		ax = plt.subplot()
+		ax = ax.imshow(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+		ax.axes.get_xaxis().set_visible(False)
+		ax.axes.get_yaxis().set_visible(False)
+
+		#save fig
+		plt.savefig(target_folder + str(frame_nb) + ".jpg")
+
+
+
+
+
+
