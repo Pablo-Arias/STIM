@@ -9,9 +9,17 @@
 from __future__ import absolute_import
 def get_super_vp_path():
 	import glob, os
-	svp_version = glob.glob("/Applications/SuperVP/SuperVP.app/Contents/MacOS/*")[0]
+	from sys import platform
+	if platform == "linux" or platform == "linux2":
+    	#Todo
+		svp_version = "" #todo
+		print("missing linux supervp")
+		
+	elif platform == "darwin":
+    	# OS X
+		svp_version = glob.glob("/Applications/SuperVP/SuperVP.app/Contents/MacOS/*")[0]
+		svp_version = svp_version.replace(' ', "\ ")# = os.path.normpath(AudioSculpt_version)
 
-	svp_version = svp_version.replace(' ', "\ ")# = os.path.normpath(AudioSculpt_version)
 	return svp_version
 
 
