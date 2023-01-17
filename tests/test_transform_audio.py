@@ -54,7 +54,7 @@ class Test_transform_audio(unittest.TestCase):
 		os.remove(aux)
 
 	def test_extract_sentences_tags(self):
-		tags, lengths = extract_sentences_tags(cls.audio_folder+"as.wav")
+		tags, lengths = extract_sentences_tags(self.audio_folder+"as.wav")
 		
 		# Test it extracted some tags
 		self.assertGreater(len(tags), 0)
@@ -64,11 +64,11 @@ class Test_transform_audio(unittest.TestCase):
 			self.assertIsNotNone(length)	
 
 	def test_index_wav_file(self):
-		index_folder = cls.audio_folder + "Indexed/"
+		index_folder = self.audio_folder + "Indexed/"
 		#remove from folder
 		for file in glob.glob(index_folder+"*.wav"):
 			os.remove(file)
-		index_wav_file(cls.audio_folder + "as.wav", rms_threshold=-40, target_folder=index_folder)
+		index_wav_file(self.audio_folder + "as.wav", rms_threshold=-40, target_folder=index_folder)
 		nb_files = len(glob.glob(index_folder+"*.wav"))
 		self.assertNotEqual(0, nb_files)
 		
