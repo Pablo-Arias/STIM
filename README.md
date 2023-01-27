@@ -25,10 +25,10 @@ Install other external dependencies with [homebrew](https://brew.sh/):
 brew install ffmpeg opencv libsndfile cmake autoconf automake swig
 ```
 
-To install STIM, I recomend using conda package manager and git for this installation of STIM. Replace PATH_TO_STIM_FOLDER with your STIM path.
+To install STIM, I recomend using conda package manager and git for this installation of STIM. Replace STIM_FOLDER with the path to the STIM folder.
 Clone the source folder somewhere safe in your computer — where it will live forever witout being moved:
 ```
-cd PATH_TO_STIM_FOLDER
+cd STIM_FOLDER
 git clone https://github.com/Pablo-Arias/STIM.git
 ```
 
@@ -36,7 +36,7 @@ Create a new conda environment with all dependencies, activate and add the path 
 ```
 conda env create -n stim39 --file stim39.yaml
 conda activate stim39
-conda develop PATH_TO_STIM_FOLDER
+conda develop STIM_FOLDER
 ```
 
 Run unit tests to see if everything worked:
