@@ -557,7 +557,7 @@ def combine_audio(files, target_audio, pre_normalisation=True):
     for file in audio_files:
         os.remove(file)
 
-def extract_frames_video(source, folder, tag="", fps=25):
+def extract_frames_video(source, folder, tag="", fps=25, extension=".bmp", quality=2):
 	"""
 	Extract the frames of a video
 	"""
@@ -566,7 +566,7 @@ def extract_frames_video(source, folder, tag="", fps=25):
 
 	os.mkdir(folder)
 
-	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d.bmp"
+	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d"+extension +" -q:v "+str(quality) +" -qmin "+ str(1)
 	subprocess.call(command, shell=True)
 
 

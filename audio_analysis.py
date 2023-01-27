@@ -10,24 +10,23 @@
 # --------------------------------------------------------------------#
 from __future__ import absolute_import
 from __future__ import print_function
-#from scikits.audiolab import aiffwrite, aiffread, wavwrite, wavread, Sndfile, oggread  # scipy.io.wavfile can't read 24-bit WAV
+import os
+import glob
+from bisect import bisect
+
 import soundfile
+import pandas as pd
+import numpy as np
 
 from super_vp_commands import generate_LPC_analysis
 from parse_sdif import mean_matrix, mean_formant_from_sdif, formant_from_sdif
 from conversions import lin2db, db2lin, get_file_without_path
-import os
-import pandas as pd
-import glob
-import numpy as np
-from bisect import bisect
 from six.moves import range
 from functools import reduce
 import contextlib
 import collections
 import parselmouth
 from parselmouth.praat import call
-
 from praat_path import get_praat_path
 
 #global
@@ -464,7 +463,8 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 	for cpt in range(1, len(formants)+1):
 		formant = formants[cpt-1]
 		formant["Formant"] = ["F" + str(cpt) for i in range(len(formant))]
-		all_formants = all_formants.append(formant)
+		#all_formants = all_formants.append(formant)
+		all_formants = pd.concat([all_formants, formant])
 
 	all_formants.index.names = ['time']
 
@@ -542,7 +542,6 @@ def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", de
 	warning : 
 		this function only works for mono files
 	"""
-	import pandas as pd
 	from super_vp_commands import generate_formant_analysis, generate_tenv_formant_analysis
 
 	#Perform formant analysis either with lpc or t_env
@@ -577,7 +576,7 @@ def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", de
 		dfs = [frequency, amplitude, bandwidth, salience ]
 		formant = reduce(lambda left,right: pd.merge(left,right,right_index=True, left_index=True), dfs)
 		formant["Formant"] = [formant_name for i in range(len(formant))]
-		formants_df = formants_df.append(formant)
+		formants_df = pd.concat([formants_df, formant])
 
 	formants_df.index = formants_df.index.rename("time")
 
@@ -630,7 +629,6 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 	"""
 	#call praat to do the analysis
 	import subprocess
-	import pandas as pd
 	import os
 	
 	#Take the absolulte path
@@ -665,8 +663,8 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 		freq_df = pd.DataFrame(frequency, index=[line[0]])
 		bw_df   = pd.DataFrame(bandwidth, index=[line[0]])
 		
-		freqs_df = freqs_df.append(freq_df)
-		bws_df   = bws_df.append(bw_df)
+		freqs_df = pd.concat([freqs_df, freq_df])
+		bws_df   = pd.concat([bws_df, bw_df])
 
 	#Clean dataframes
 	freqs_df = freqs_df.dropna()

@@ -11,11 +11,12 @@ from __future__ import absolute_import
 from __future__ import print_function
 import numpy as np
 from pandas import DataFrame
+import pandas as pd
 import os
+import sys
 
 #sdif
 import eaSDIF
-import sys
 from fileio.sdif.FSdifLoadFile import FSdifLoadFile
 from six.moves import range
 
@@ -41,7 +42,7 @@ def get_f0_info(f0file) :
         f0times_data = np.loadtxt(f0file)
         f0times = np.array(f0times_data)[:,0]
         f0val   = np.array(f0times_data)[:,1]        
-        f0harm  = None        
+        f0harm  = None
         
     return f0times, f0harm, f0val
 
@@ -80,7 +81,6 @@ def get_formants_info(formant_file):
     
     return: Array of pandas data frames with formants
     """
-
     ts = [] # analysis times
     cols_names = ("Frequency", "Amplitude", "Bw", "Saliance")
     nb_formants = get_nb_formants(formant_file)
@@ -88,7 +88,7 @@ def get_formants_info(formant_file):
     try:
         formants = []
         for i in range(nb_formants):
-            formant = DataFrame(columns=cols_names)
+            formant = pd.DataFrame(columns=cols_names)
             formants.append(formant)
 
 
@@ -118,7 +118,8 @@ def get_formants_info(formant_file):
             
             if len(par_mat) == nb_formants:
                 for i in range(nb_formants):
-                    formants[i] = formants[i].append(DataFrame([par_mat[i].tolist()], columns=cols_names, index = [frame_time]))
+                    formants[i] = pd.concat([formants[i], pd.DataFrame([par_mat[i].tolist()], columns=cols_names, index = [frame_time])])
+                    #formants[i] = formants[i].append(DataFrame([par_mat[i].tolist()], columns=cols_names, index = [frame_time]))
 
         
     except EOFError : 
