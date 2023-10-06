@@ -17,6 +17,7 @@ import sys
 from transform_audio import extract_sentences_tags
 import cv2
 from datetime import datetime
+import os
 
 def extract_audio(video_file, target_name):
 	"""
@@ -31,7 +32,7 @@ def extract_audio(video_file, target_name):
 	try:
 		os.remove(target_name)
 	except:
-		pass		
+		pass
 
 	base = os.path.basename(video_file)
 	file_name = os.path.splitext(base)[0]
@@ -122,12 +123,15 @@ def get_movie_duration(video, in_seconds=True):
 	import shlex, subprocess
 
 	command = "ffmpeg -i "+video+" 2>&1 | grep \"Duration\""
-	output = subprocess.check_output(command, shell=True)
-	result = output
+	result = subprocess.check_output(command, shell=True)
 
-	if in_seconds:	
-		output      = str(output)
-		f_dur       = output.split(" ")[3][:-1]
+	output      = str(result)
+	f_dur       = output.split(" ")[3][:-1]
+
+	if f_dur == "N/A":
+		result = 0
+		
+	elif in_seconds:	
 		f_dur       = datetime.strptime(f_dur, "%H:%M:%S.%f")
 		a_timedelta = f_dur - datetime(1900, 1, 1)
 		result      = a_timedelta.total_seconds()
@@ -181,13 +185,18 @@ def extract_sub_video_sentences(source_name, target_name, start, length):
 	Takes a sub video in source_name begining at start and ending at end
 	The start time should be in this format: 00:24:00
 	Length in seconds.
+
+	To format start you may wqnt to use:
+	> import datetime
+	> str(datetime.timedelta(seconds=666))
+	> '0:11:06'
 	"""
 
 	import subprocess
 	import os
 
 	#command = "ffmpeg -i "+source_name+" -ss "+start+" -t "+end+" -async 1 "+target_name
-	command = "ffmpeg -i "+source_name+" -ss "+start+" -t "+length+" -async 1 -strict -2 "+target_name
+	command = "ffmpeg -i "+source_name+" -ss "+str(start)+" -t "+str(length)+" -async 1 -strict -2 "+target_name
 
 	subprocess.call(command, shell=True)
 
@@ -355,14 +364,14 @@ def convert_to_avi(source, target):
 
 
 	#command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 720x576 -acodec libmp3lame -ab 256k -ar 48000 -ac 2 -pass 2 -threads 0 -f avi "+target
-	command = "ffmpeg -i "+source+" -vcodec mpeg4 -vtag XVID -b 990k -bf 2 -g 300 -s 720x576 -acodec libmp3lame  -pass 1 -ab 256 -threads 0 -f avi "+target
+	command = "ffmpeg -i "+source+" -vcodec mpeg4  -af aresample=async=1000 -vtag XVID -b 990k -bf 2 -g 300 -s 720x576 -acodec libmp3lame  -pass 1 -ab 256 -threads 0 -f avi "+target
 	subprocess.call(command, shell=True)
 
 
 def change_frame_rate(source, target_fps, output):
 	import subprocess
 	import os
-	command = "ffmpeg -i "+source+" -filter:v fps="+str(target_frame_rate) +" " +output
+	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero -af apad -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
 	subprocess.call(command, shell=True)
 
 
@@ -456,21 +465,37 @@ def sharpen_video(source_video, target_video):
 	command = "ffmpeg -i "+source_video+" -vf unsharp "+target_video
 	subprocess.call(command, shell=True)	
 
-def combine_2_videos(left, right, output):
+def combine_2_videos(left, right, output, combine_audio_flag=True):
 	"""
 		Create a movie with 2 movies
 
 	"""
 	import subprocess
 
+	if combine_audio_flag:
+		audio_1 = "aux_audio1_qsddqsdsdqd.wav"
+		audio_2 = "aux_audio2_qsddqsdsdqd.wav"
+		master_audio = "master_qsddqsdsdqd.wav"
+		extract_audio(left , audio_1)
+		extract_audio(right, audio_2)
+		combine_audio([audio_1, audio_2], master_audio)
+
+
 	#command = "ffmpeg -i "+left+" -i "+right+" -filter_complex \"[0][1]scale2ref=w=oh*mdar:h=ih[left][right];[left][right]hstack\" "+output
 
 	#command = "ffmpeg -i "+left+" -i "+ right+" -filter_complex \"[0]scale=175:100:force_original_aspect_ratio=decrease,pad=175:100:-1:-1:color=gray,setsar=1[left];[1]scale=175:100:force_original_aspect_ratio=decrease,pad=175:100:-1:-1:color=gray,setsar=1[right];[left][right]hstack\" "+ output
+	if combine_audio_flag:
+		command = "ffmpeg -i "+left+" -i "+right+" -i "+master_audio+" -filter_complex \"[0][1]scale2ref=w=oh*mdar:h=ih[left][right];[left][right]hstack\" -map 2:a -c:a copy "+ output
 
-	command = "ffmpeg -i "+left+" -i "+right+" -filter_complex \"[0][1]scale2ref=w=oh*mdar:h=ih[left][right];[left][right]hstack\" "+ output
+	else:
+		command = "ffmpeg -i "+left+" -i "+right+" -filter_complex \"[0][1]scale2ref=w=oh*mdar:h=ih[left][right];[left][right]hstack\" "+ output
 
 	subprocess.call(command, shell=True)
 
+	if combine_audio_flag:
+		os.remove(master_audio)
+		os.remove(audio_1)
+		os.remove(audio_2)
 
 def combine_videos( tl, tr, bl, br,output, audios = [] ):
 	"""
@@ -486,16 +511,17 @@ def combine_videos( tl, tr, bl, br,output, audios = [] ):
 		combine_audio(audios, master_audio)
 		#command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+bl+" -i "+ master_audio +" -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -c:a copy -shortest "+ output
 
-		command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+br+" -i "+master_audio+" -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -map 4:a -c:a copy -shortest "+output
+		command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+br+" -i "+master_audio+" -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -map 4:a -c:a aac -shortest "+output
 
 	else :
-		command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+bl+" -ac 2 -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -c:a copy -shortest "+ output
+		command = "ffmpeg -i "+tl+" -i "+tr+" -i "+bl+" -i "+br+" -ac 2 -filter_complex \"[0:v][1:v]hstack[t];[2:v][3:v]hstack[b];[t][b]vstack[v]\" -map \"[v]\" -c:a aac -shortest "+ output
 
 	subprocess.call(command, shell=True)
 
 	#delete master audio
 	if audios != []:
 		os.remove(master_audio)
+
 
 def combine_audio(files, target_audio, pre_normalisation=True):
     """

@@ -1334,6 +1334,15 @@ def get_sound_duration(audio_file):
 
 	return len(sound_in)/float(sr)
 
+def get_sf(audio_file):
+	"""
+	returns sampling frequency
+	"""
+	#Read audio file
+	sound_in, sf = soundfile.read(audio_file)
+
+	return float(sf)
+
 def get_nb_channels(audio_file):
 	"""
 	get number of channels of audiofile

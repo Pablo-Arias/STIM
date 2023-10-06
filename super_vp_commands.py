@@ -19,6 +19,8 @@ import os
 import numpy as np
 from super_vp_path import get_super_vp_path
 super_vp_path = get_super_vp_path()
+import random
+import string
 
 # ---------- generate_f0_analysis
 def generate_f0_analysis(audio_file, analysis ="", f_min =80, f_max=1500, F=3000, wait = True):
@@ -267,6 +269,36 @@ def transpose_sound(source_sound, nb_cents, target_sound, wait = True, env_warp_
 	if wait:
 		p.wait() #wait
 
+# -----------
+def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, wait = True, env_warp_ws=512, lpc_order=25, win_oversampling = 64, fft_oversampling=2 ):
+	"""
+		Use super vp to do a dynamic f0 transposition
+		times : array with times where to apply the transposition in seconds
+		transpositions : array with transposition values in cents
+		source_sound : input file
+		target_sound : output file to be created
+		Other parameters are super vp parameters
+
+	"""
+	string_length = 16
+	pitch_txt = ''.join(random.choice(string.ascii_lowercase[:6]) for _ in range(string_length))
+
+	with open(pitch_txt, 'w') as file:
+		combined_elements = [f'{x} {y}'+"\n" for x, y in zip(times, transpositions)]
+		combined_elements = ''.join(combined_elements)
+		file.writelines(combined_elements+ "\n")
+
+	transpose_sound(source_sound       = source_sound
+				, nb_cents         = pitch_txt
+				, target_sound     = target_sound
+				, wait             = True
+				, env_warp_ws      = 512
+				, lpc_order        = 25
+				, win_oversampling = 64
+				, fft_oversampling = 2
+			)
+	
+	os.remove(pitch_txt)
 
 
 # ---------- transpose_sound
@@ -342,6 +374,50 @@ def freq_warp(source_sound, target_sound, warp_file, freq_warp_ws=512,lpc_order=
 	
 	if "t_env" == warp_method:
 		os.remove(f0_analysis)
+
+
+def warp_audio_file(source_freq, target_freq, original_sound, target_sound, freq_warp_ws=512, lpc_order=25, wait=True, warp_method='lpc', win_oversampling=64, fft_oversampling=2):
+	"""
+	A useful function to use freq warp without writing the warp files.
+	freq_warp_ws     : size of the individual signal segments that will be treated by SuperVP
+	lpc_order        : order for the lpc analysis
+	warp_method      : warp with the lpc or the true envelope
+	fft_oversampling : frequency oversampling defined as an exponent that changes the FFT size (FFTsize=freq_warp_ws*2^fft_oversampling)
+	win_oversampling : window oversampling or minimum overlap  of analysis and  synthesis windows (hopsize=freq_warp_ws/win_oversampling). Previously called 'freq_warp_oversampling'
+	"""
+	from audio_analysis import get_sf
+
+	string_length = 16
+	warp_txt = ''.join(random.choice(string.ascii_lowercase[:6]) for _ in range(string_length))
+	sf = get_sf(original_sound)
+
+	# create warp file
+	combined_elements = [f'{x} {y}' for x, y in zip(source_freq, target_freq)]
+	combined_elements = ' '.join(combined_elements)
+	warp_line = ( str(len(source_freq) + 2) +"\n"
+				+ "0.0"  # time
+				+ " "
+				+ "0.0 0.0 " 
+				+ combined_elements
+				+ " " + str(sf/2) +" " + str(sf/2)
+				)
+
+	with open(warp_txt, 'w') as file:
+		file.writelines(warp_line)
+		file.writelines("\n")
+
+	freq_warp(source_sound   = original_sound
+				, target_sound = target_sound
+				, warp_file = warp_txt
+				, freq_warp_ws=freq_warp_ws
+				, lpc_order=lpc_order
+				, wait=wait
+				, warp_method=warp_method
+				, win_oversampling=win_oversampling
+				, fft_oversampling=fft_oversampling
+				)
+
+	os.remove(warp_txt)
 
 def stretch_sound_to_target_duration(source_sound, target_sound, target_duration, extreme_precision = True):
 	"""

@@ -7,7 +7,7 @@ import numpy as np
 from shutil import copyfile
 from conversions import get_file_without_path
 
-mozza_path = "/Users/arias/Documents/Developement/ducksoup/plugin_dev/code_repo/mozza"
+mozza_path = "/Users/arias/Documents/Developement/ducksoup/gitlab.com/mozza"
 
 
 
@@ -37,7 +37,7 @@ def create_deformation_file(container_folder, source, model, output, wait=True):
 	"""
 
 
-	cmd 		= "docker run -v "+container_folder+":/data -v "+mozza_path+":/mozza-path creamlab/mozza mozza-templater -b -m /mozza-path/data/in/shape_predictor_68_face_landmarks.dat -n /data/"+source+" -s /data/"+model+" -o /data/"+output
+	cmd 		= "docker run -v "+container_folder+":/data -v "+mozza_path+":/mozza-path ducksouplab/mozza mozza-templater -b -m /mozza-path/data/in/shape_predictor_68_face_landmarks.dat -n /data/"+source+" -s /data/"+model+" -o /data/"+output
 
 	args 		= shlex.split(cmd)
 
@@ -71,7 +71,7 @@ def transform_img_with_mozza(container_folder,  source, target, wait=True, defor
 	"""
 	container_folder = os.path.abspath(container_folder)
 
-	cmd 		= "docker run -v "+container_folder+":/data creamlab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! jpegenc ! filesink location=/data/"+target
+	cmd 		= "docker run -v "+container_folder+":/data ducksouplab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! jpegenc ! filesink location=/data/"+target
 	
 	if print_info:
 		print("executing : " + cmd)
@@ -83,11 +83,11 @@ def transform_img_with_mozza(container_folder,  source, target, wait=True, defor
 		p.wait() #wait	
 
 def transform_video_with_mozza(container_folder,  source, target, wait=True, deformation_file="./default.dfm", alpha=1.0, face_thresh=0.25 , overlay=False , beta=0.1, fc=5.0):	
-	#cmd 		= "docker run -v "+container_folder+":/data creamlab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! x264enc ! mp4mux name=mux ! filesink location=/data/"+target
+	#cmd 		= "docker run -v "+container_folder+":/data ducksouplab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! x264enc ! mp4mux name=mux ! filesink location=/data/"+target
 	
-	#cmd 		= "docker run -v "+container_folder+":/data creamlab/mozza:latest gst-launch-1.0 filesrc location=/data/1F_1.mp4 ! decodebin ! videoconvert ! x264enc ! mp4mux ! filesink location=/data/output.mp4"
+	#cmd 		= "docker run -v "+container_folder+":/data ducksouplab/mozza:latest gst-launch-1.0 filesrc location=/data/1F_1.mp4 ! decodebin ! videoconvert ! x264enc ! mp4mux ! filesink location=/data/output.mp4"
 
-	cmd			= "docker run --env GST_DEBUG=2 -v "+container_folder+":/data creamlab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! x264enc ! mp4mux ! filesink location=/data/"+target
+	cmd			= "docker run --env GST_DEBUG=2 -v "+container_folder+":/data ducksouplab/mozza:latest gst-launch-1.0 filesrc location=/data/"+source+" ! decodebin ! videoconvert ! mozza deform=/data/"+deformation_file+" alpha="+str(alpha)+" ! videoconvert ! x264enc ! mp4mux ! filesink location=/data/"+target
 
 	print(cmd)
 	
