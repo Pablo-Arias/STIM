@@ -247,7 +247,7 @@ def generate_fft_analysis(audio_file, analysis = "", wait = True):
 
 
 # ---------- transpose_sound
-def transpose_sound(source_sound, nb_cents, target_sound, wait = True, env_warp_ws=512, lpc_order=25, win_oversampling = 64, fft_oversampling=2):
+def transpose_sound(source_sound, nb_cents, target_sound, wait = True, window_size=512, fft_size=25, win_oversampling = 64, fft_oversampling=2, use_spec_env = True):
 	"""
 	transpose source sound from number of cents and generate target_sound
 
@@ -256,12 +256,15 @@ def transpose_sound(source_sound, nb_cents, target_sound, wait = True, env_warp_
 	nb_cents : number of cents
 	"""	
 
-	env_warp_ws      = str(env_warp_ws)
-	lpc_order        = str(lpc_order)
+	window_size      = str(window_size)
+	fft_size        = str(fft_size)
 	fft_oversampling = str(int(fft_oversampling))
 	win_oversampling = str(win_oversampling)
+	if use_spec_env:
+		parameters =  "-t -Afft "+fft_size+" -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
+	else:
+		parameters =  "-t "+ "-M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
 
-	parameters =  "-t -Afft "+lpc_order+" -M"+env_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)
@@ -270,7 +273,7 @@ def transpose_sound(source_sound, nb_cents, target_sound, wait = True, env_warp_
 		p.wait() #wait
 
 # -----------
-def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, wait = True, env_warp_ws=512, lpc_order=25, win_oversampling = 64, fft_oversampling=2 ):
+def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, wait = True, window_size=2048, fft_size=4096, win_oversampling = 64, fft_oversampling=2, use_spec_env=True ):
 	"""
 		Use super vp to do a dynamic f0 transposition
 		times : array with times where to apply the transposition in seconds
@@ -291,11 +294,12 @@ def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, 
 	transpose_sound(source_sound       = source_sound
 				, nb_cents         = pitch_txt
 				, target_sound     = target_sound
-				, wait             = True
-				, env_warp_ws      = 512
-				, lpc_order        = 25
-				, win_oversampling = 64
-				, fft_oversampling = 2
+				, wait             = wait
+				, window_size      = window_size
+				, fft_size         = fft_size
+				, win_oversampling = win_oversampling
+				, fft_oversampling = fft_oversampling
+				, use_spec_env = use_spec_env
 			)
 	
 	os.remove(pitch_txt)

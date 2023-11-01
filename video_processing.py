@@ -196,7 +196,7 @@ def extract_sub_video_sentences(source_name, target_name, start, length):
 	import os
 
 	#command = "ffmpeg -i "+source_name+" -ss "+start+" -t "+end+" -async 1 "+target_name
-	command = "ffmpeg -i "+source_name+" -ss "+str(start)+" -t "+str(length)+" -async 1 -strict -2 "+target_name
+	command = "ffmpeg -i "+source_name+" -ss "+str(start)+" -t "+str(length)+" -async 1 -q:v 1 -strict -2 "+target_name
 
 	subprocess.call(command, shell=True)
 
@@ -371,7 +371,7 @@ def convert_to_avi(source, target):
 def change_frame_rate(source, target_fps, output):
 	import subprocess
 	import os
-	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero -af apad -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
+	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero -af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
 	subprocess.call(command, shell=True)
 
 
@@ -473,9 +473,10 @@ def combine_2_videos(left, right, output, combine_audio_flag=True):
 	import subprocess
 
 	if combine_audio_flag:
-		audio_1 = "aux_audio1_qsddqsdsdqd.wav"
-		audio_2 = "aux_audio2_qsddqsdsdqd.wav"
-		master_audio = "master_qsddqsdsdqd.wav"
+		import uuid 
+		audio_1 = str(uuid.uuid1()) +"____.wav"
+		audio_2 = str(uuid.uuid1()) +"____.wav"
+		master_audio = str(uuid.uuid1()) +"____.wav"
 		extract_audio(left , audio_1)
 		extract_audio(right, audio_2)
 		combine_audio([audio_1, audio_2], master_audio)
@@ -532,14 +533,20 @@ def combine_audio(files, target_audio, pre_normalisation=True):
     from transform_audio import wav_to_mono
     import os
     import numpy as np
+    import uuid
 
     #Extract audio from video and convert to mono
     audio_files = []
-    for cpt, file in enumerate(files):
+    for file in files:
         #extract audio
-        audio = str(cpt)+"_aux_audio_1439.wav"
+		
+        audio = str(uuid.uuid4()) + ".wav"
         audio_files.append(audio)
+        print(audio)
+
         extract_audio(file, audio)
+        import time
+        time.sleep(2)
 
         #To mono
         wav_to_mono(audio, audio)

@@ -42,7 +42,10 @@ def trim_folder(source_folder, folder_tag, target_folder, trimed_path, extension
         print("Triming videos with ffmpeg...")
 
     if not os.path.isdir(target_folder + trimed_path):
-        os.mkdir(target_folder + trimed_path )
+        try:
+            os.mkdir(target_folder + trimed_path )
+        except:
+            pass
 
     for file in glob.glob(source_folder + "*" + extension):
         if verbose:
@@ -104,37 +107,39 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
 
     #extract and combine audios
     if combine_audio_flag:
+        import uuid 
         if not os.path.isdir(target_folder + combined_with_audio_path):
             os.mkdir(target_folder + combined_with_audio_path)
 
         audios = []
         for cpt1, file in enumerate(files):
-            audio_name = str(cpt1) + "____.wav"
+            audio_name = str(cpt1) + str(uuid.uuid1()) +"____.wav"
             extract_audio(file, audio_name)
             audios.append(audio_name)
 
-        combine_audio(audios, "aux.wav")
+        aux_wav = str(uuid.uuid1()) + ".wav"
+        combine_audio(audios, aux_wav)
 
         #replace audio
         file_tag = get_file_without_path(output)
-        replace_audio(output,  "aux.wav", target_folder + combined_with_audio_path + file_tag + extension)
+        replace_audio(output,  aux_wav, target_folder + combined_with_audio_path + file_tag + extension)
 
         for audio in audios:
             os.remove(audio)
         
-        os.remove( "aux.wav")
+        os.remove( aux_wav)
 
-def pre_process_ducksoup_recordings(source_folder
-                                    , folder_tag
-                                    , target_folder="preproc/"
-                                    , extension=".mp4"
-                                    , trimed_path="trimed/"
-                                    , re_encode_path = "re-encode/"
-                                    , combine_videos=True
-                                    , combined_path="combined/"
-                                    , combined_with_audio_path="with_audio/"
-                                    , combine_audio_flag=True
-                                    , verbose=True
+def ds_process(source_folder
+                            , folder_tag
+                            , target_folder="preproc/"
+                            , extension=".mp4"
+                            , trimed_path="trimed/"
+                            , re_encode_path = "re-encode/"
+                            , combine_videos=True
+                            , combined_path="combined/"
+                            , combined_with_audio_path="with_audio/"
+                            , combine_audio_flag=True
+                            , verbose=True
                                     ):
     """
     | A fucntion to preprocess recordings made with ducksoup.
@@ -155,17 +160,23 @@ def pre_process_ducksoup_recordings(source_folder
 
     | Usage Example: 
     |
-    |from ducksoup_preproc import pre_process_ducksoup_recordings
+    |from ducksoup_preproc import ds_process
     |import glob
     |for source_folder in glob.glob("videos/*/recordings/"):
     |   folder_tag = source_folder.split("/")[-3] + "/"
-    |   pre_process_ducksoup_recordings(source_folder=source_folder, folder_tag=folder_tag)
+    |   ds_process(source_folder=source_folder, folder_tag=folder_tag)
 
 
     """
-    # create target folder if it doesn't exist
+    # create target folder if it doesn't exist, if it exists, pass
     if not os.path.isdir(target_folder):
-        os.mkdir(target_folder)
+        try:
+            import errno
+            os.mkdir(target_folder)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            pass
     
     if verbose:
         print(folder_tag)
@@ -190,3 +201,71 @@ def pre_process_ducksoup_recordings(source_folder
                        , verbose=verbose
                        , combine_audio_flag=combine_audio_flag
                        )
+
+
+
+
+
+## Parallel processing functions
+def parallelize_function(source_folder, folder_tag_idx =3
+                                    , target_folder="preproc/" 
+                                    , extension=".mp4"
+                                    , trimed_path="trimed/"
+                                    , re_encode_path = "re-encode/"
+                                    , combine_videos=True
+                                    , combined_path="combined/"
+                                    , combined_with_audio_path="with_audio/"
+                                    , combine_audio_flag=True
+                                    , verbose=True):
+    
+    folder_tag = source_folder.split("/")[folder_tag_idx] + "/"
+
+    ds_process(source_folder = source_folder
+                    , folder_tag = folder_tag
+                    , target_folder=target_folder
+                    , extension=extension
+                    , trimed_path=trimed_path
+                    , re_encode_path = re_encode_path
+                    , combine_videos=combine_videos
+                    , combined_path=combined_path
+                    , combined_with_audio_path=combined_with_audio_path
+                    , combine_audio_flag=combine_audio_flag
+                    , verbose=verbose
+                    )
+
+def ds_process_parallel(sources , folder_tag_idx =3
+                                    , target_folder="preproc/" 
+                                    , extension=".mp4"
+                                    , trimed_path="trimed/"
+                                    , re_encode_path = "re-encode/"
+                                    , combine_videos=True
+                                    , combined_path="combined/"
+                                    , combined_with_audio_path="with_audio/"
+                                    , combine_audio_flag=True
+                                    , verbose=True
+                                    ):
+    """
+        from ducksoup import ds_process_parallel
+        folder_tag_idx : is the place where the * is, in the path. The place where recoridngs are blocked by.
+        ds_process_parallel(sources = "videos/latest_30_10_b/test_2/*/recordings/")
+        check help(ds_process) for other arguments
+
+    """
+    import multiprocessing
+    from itertools import repeat
+    
+    pool_obj = multiprocessing.Pool()
+    a_args     = glob.glob(sources)
+    
+    pool_obj.starmap(parallelize_function, zip(a_args
+                                  , repeat(folder_tag_idx)
+                                  , repeat(target_folder)
+                                  , repeat(extension)
+                                  , repeat(trimed_path)
+                                  , repeat(re_encode_path)
+                                  , repeat(combine_videos)
+                                  , repeat(combined_path)
+                                  , repeat(combined_with_audio_path)
+                                  , repeat(combine_audio_flag)
+                                  , repeat(verbose))
+                                  )
