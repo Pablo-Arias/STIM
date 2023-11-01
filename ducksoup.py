@@ -207,7 +207,7 @@ def ds_process(source_folder
 
 
 ## Parallel processing functions
-def parallelize_function(source_folder, folder_tag_idx =3
+def parallelize_function(source_folder, folder_tag_idx =-3
                                     , target_folder="preproc/" 
                                     , extension=".mp4"
                                     , trimed_path="trimed/"
@@ -219,6 +219,7 @@ def parallelize_function(source_folder, folder_tag_idx =3
                                     , verbose=True):
     
     folder_tag = source_folder.split("/")[folder_tag_idx] + "/"
+    print("the folder tag is : " + folder_tag)
 
     ds_process(source_folder = source_folder
                     , folder_tag = folder_tag
@@ -233,7 +234,7 @@ def parallelize_function(source_folder, folder_tag_idx =3
                     , verbose=verbose
                     )
 
-def ds_process_parallel(sources , folder_tag_idx =3
+def ds_process_parallel(sources , folder_tag_idx =-3
                                     , target_folder="preproc/" 
                                     , extension=".mp4"
                                     , trimed_path="trimed/"
