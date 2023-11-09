@@ -18,6 +18,9 @@ from transform_audio import extract_sentences_tags
 import cv2
 from datetime import datetime
 import os
+import glob
+from conversions import get_file_without_path
+from transform_audio import index_wav_file
 
 def extract_audio(video_file, target_name):
 	"""
@@ -657,6 +660,31 @@ def extract_frames(video, target_folder, frame_nbs = []):
 
 
 
+## Index interactions
+def index_video_recording(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed/"):
+    target_file = target_folder + get_file_without_path(source) + ".wav"
+    indexed_folder = target_folder + get_file_without_path(source) + "/"
+    extract_audio(source, target_file)
+    index_wav_file(target_file, rms_threshold = rms_threshold, WndSize = WndSize, target_folder = indexed_folder)
+
+
+def index_video_recordings_parallel(sources, rms_threshold = -50, WndSize = 16384, indexed_path="extracted_audio/"):
+    try:
+        os.mkdir(indexed_path)
+    except:
+        pass    
+    
+    import multiprocessing
+    from itertools import repeat
+    pool_obj = multiprocessing.Pool()
+    sources     = glob.glob(sources)
+
+    pool_obj.starmap(index_video_recording, zip(sources
+                                            , repeat(rms_threshold)
+                                            , repeat(WndSize)
+                                            , repeat(indexed_path)
+                                            ))
+    
 
 
 
