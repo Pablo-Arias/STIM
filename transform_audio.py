@@ -190,7 +190,7 @@ def extract_sentences_tags(source, rms_threshold = -50, WndSize = 16384, overlap
 	return tags, vid_lengths
 
 
-def index_wav_file(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed"):
+def index_wav_file(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed", add_time_tag=False):
 	"""
 	input:
 		source : fsource audio file
@@ -250,7 +250,13 @@ def index_wav_file(source, rms_threshold = -50, WndSize = 16384, target_folder =
 
 				#write(filename = target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav",rate = fs, data= x[begining:end])
 				#wavwrite(x[begining:end], target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav", fs, enc='pcm24')
-				soundfile.write(target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav", x[begining:end] , fs)
+				if not add_time_tag:
+					soundfile.write(target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+".wav", x[begining:end] , fs)
+				else:
+					start_tag = np.round(begining/float(fs), 3)
+					stop_tag  = np.round(end/float(fs), 3)
+					name = target_folder+"/"+ sound_tag + "_" + str(NbofWrittendFiles)+ "_" + str(start_tag) + "_" + str(stop_tag)+".wav"
+					soundfile.write(name, x[begining:end] , fs)
 
 				NbofWrittendFiles = NbofWrittendFiles + 1
 

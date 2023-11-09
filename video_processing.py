@@ -661,14 +661,14 @@ def extract_frames(video, target_folder, frame_nbs = []):
 
 
 ## Index interactions
-def index_video_recording(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed/"):
+def index_video_recording(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed/", add_time_tag=False):
     target_file = target_folder + get_file_without_path(source) + ".wav"
     indexed_folder = target_folder + get_file_without_path(source) + "/"
     extract_audio(source, target_file)
-    index_wav_file(target_file, rms_threshold = rms_threshold, WndSize = WndSize, target_folder = indexed_folder)
+    index_wav_file(target_file, rms_threshold = rms_threshold, WndSize = WndSize, target_folder = indexed_folder, add_time_tag=add_time_tag)
 
 
-def index_video_recordings_parallel(sources, rms_threshold = -50, WndSize = 16384, indexed_path="extracted_audio/"):
+def index_video_recordings_parallel(sources, rms_threshold = -50, WndSize = 16384, indexed_path="extracted_audio/", add_time_tag=False):
     try:
         os.mkdir(indexed_path)
     except:
@@ -683,6 +683,7 @@ def index_video_recordings_parallel(sources, rms_threshold = -50, WndSize = 1638
                                             , repeat(rms_threshold)
                                             , repeat(WndSize)
                                             , repeat(indexed_path)
+											, repeat(add_time_tag)
                                             ))
     
 
