@@ -377,6 +377,25 @@ def change_frame_rate(source, target_fps, output):
 	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero -af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
 	subprocess.call(command, shell=True)
 
+def re_encode(source, output, target_fps=30, resolution="1280:720", preset="veryslow", crf = "18"):
+    """
+        Re-encode files with specific 
+		fps : number of FPS
+		resolution : target resolution
+		preset: veryslow, slower, slow, medium, veryfast, superfast, ultrafast
+		CRF : use 18 for almost lossless
+		Check CRF here : https://superuser.com/questions/1556953/why-does-preset-veryfast-in-ffmpeg-generate-the-most-compressed-file-compared
+    """
+    import subprocess
+    import os
+    #re-encode
+    command = "ffmpeg -i "+source+" -vf scale="+resolution+" -preset "+preset+" -crf "+str(crf)+" "+output
+    subprocess.call(command, shell=True)
+
+    #change frame rate
+    command = "ffmpeg -i "+output+" -y -avoid_negative_ts make_zero -af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
+    subprocess.call(command, shell=True)
+
 
 def crop_video(source_video, target_video, x=0, y=0,out_w=0 , out_h=0 ):
 	import subprocess
@@ -662,6 +681,7 @@ def extract_frames(video, target_folder, frame_nbs = []):
 
 ## Index interactions
 def index_video_recording(source, rms_threshold = -50, WndSize = 16384, target_folder = "Indexed/", add_time_tag=False):
+    print("Indexing : " + source)
     target_file = target_folder + get_file_without_path(source) + ".wav"
     indexed_folder = target_folder + get_file_without_path(source) + "/"
     extract_audio(source, target_file)

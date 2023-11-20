@@ -1,4 +1,4 @@
-from video_processing import combine_videos, get_movie_duration, change_frame_rate, extract_audio, combine_audio, replace_audio, extract_sub_video_sentences
+from video_processing import combine_videos, get_movie_duration, change_frame_rate, extract_audio, combine_audio, replace_audio, extract_sub_video_sentences, re_encode
 from conversions import get_file_without_path
 import glob
 import os
@@ -62,7 +62,7 @@ def trim_folder(source_folder, folder_tag, target_folder, trimed_path, extension
 
 
 ## --re_encode_folder 
-def re_encode_folder(source_folder, folder_tag, target_folder, re_encode_path, extension=".mp4",verbose=True):
+def re_encode_folder(source_folder, folder_tag, target_folder, re_encode_path, extension=".mp4", resolution="1280:720", preset="veryslow", crf = 18, verbose=True):
     if verbose:
         print("Re-encoding videos with ffmpeg...")
         print()
@@ -79,7 +79,7 @@ def re_encode_folder(source_folder, folder_tag, target_folder, re_encode_path, e
             
         file_tag = get_file_without_path(file)
         output = target_folder+ re_encode_path + folder_tag + file_tag + ".mp4"
-        change_frame_rate(source=file, target_fps = 30, output=output)
+        re_encode(source=file, output=output, target_fps=30, resolution="1280:720", preset="veryslow", crf = "18")
 
 
 ##-- combine_folder
@@ -140,6 +140,9 @@ def ds_process(source_folder
                             , combined_with_audio_path="with_audio/"
                             , combine_audio_flag=True
                             , verbose=True
+                            , resolution="1280:720"
+                            , preset="veryslow"
+                            , crf = "18"
                                     ):
     """
     | A fucntion to preprocess recordings made with ducksoup.
@@ -187,7 +190,7 @@ def ds_process(source_folder
 
     #reencode
     source_folder = target_folder + trimed_path + folder_tag
-    re_encode_folder(source_folder=source_folder, folder_tag=folder_tag, target_folder=target_folder, re_encode_path=re_encode_path, extension=extension, verbose=verbose)
+    re_encode_folder(source_folder=source_folder, folder_tag=folder_tag, target_folder=target_folder, re_encode_path=re_encode_path, extension=extension, resolution=resolution, preset=preset, crf = crf, verbose=verbose)
 
     #Combine videos
     if combine_videos:
@@ -216,7 +219,11 @@ def parallelize_function(source_folder, folder_tag_idx =-3
                                     , combined_path="combined/"
                                     , combined_with_audio_path="with_audio/"
                                     , combine_audio_flag=True
-                                    , verbose=True):
+                                    , verbose=True
+                                    , resolution="1280:720"
+                                    , preset="veryslow"
+                                    , crf = "18"
+                                    ):
     
     folder_tag = source_folder.split("/")[folder_tag_idx] + "/"
     print("the folder tag is : " + folder_tag)
@@ -232,6 +239,9 @@ def parallelize_function(source_folder, folder_tag_idx =-3
                     , combined_with_audio_path=combined_with_audio_path
                     , combine_audio_flag=combine_audio_flag
                     , verbose=verbose
+                    , resolution=resolution
+                    , preset=preset
+                    , crf = crf
                     )
 
 def ds_process_parallel(sources , folder_tag_idx =-3
@@ -244,6 +254,9 @@ def ds_process_parallel(sources , folder_tag_idx =-3
                                     , combined_with_audio_path="with_audio/"
                                     , combine_audio_flag=True
                                     , verbose=True
+                                    , resolution="1280:720"
+                                    , preset="veryslow"
+                                    , crf = "18"                        
                                     ):
     """
         from ducksoup import ds_process_parallel
@@ -268,5 +281,9 @@ def ds_process_parallel(sources , folder_tag_idx =-3
                                   , repeat(combined_path)
                                   , repeat(combined_with_audio_path)
                                   , repeat(combine_audio_flag)
-                                  , repeat(verbose))
+                                  , repeat(verbose)
+                                  , repeat(resolution)
+                                  , repeat(preset)
+                                  , repeat(crf)
                                   )
+                    )
