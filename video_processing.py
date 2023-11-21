@@ -373,13 +373,12 @@ def convert_to_avi(source, target):
 
 def change_frame_rate(source, target_fps, output, overwrite=False):
 	import subprocess
-	import os
 	if overwrite:
 		overwrite_string=" -y "
 	else:
 		overwrite_string=""
 
-	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero "+overwrite+"+-af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
+	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero "+overwrite_string+"-af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
 	subprocess.call(command, shell=True)
 
 def re_encode(source, output, resolution="1280:720", preset="veryslow", crf = "18"):

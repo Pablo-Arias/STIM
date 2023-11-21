@@ -83,7 +83,7 @@ def re_encode_folder(source_folder, folder_tag, target_folder, re_encode_path, e
 
 
 ## --re_encode_folder 
-def change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path, extension=".mp4", target_fps=30):
+def change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path="new_fps/", extension=".mp4", target_fps=30, verbose=True):
     if verbose:
         print("Changing FPS of videos with ffmpeg...")
         print()
@@ -172,7 +172,7 @@ def ds_process(source_folder
     | A function to preprocess recordings made with ducksoup.
     |
     |
-    | This function trims, re-encodes, and combines the videos
+    | This function trims, re-encodes, changes the fps and combines the videos collected by ducksoup
     | input:
     |   source_folder : folder where the videos to pre process are located (with a slash at the end)
     |   folder_tag    : is the identifier of the interaction, where all processed videos will be saved
@@ -189,13 +189,13 @@ def ds_process(source_folder
     |    target_fps = "30" Target FPS to resample videos
     | Usage Example: 
     |
-    |from ducksoup_preproc import ds_process
-    |import glob
-    |for source_folder in glob.glob("videos/*/recordings/"):
-    |   folder_tag = source_folder.split("/")[-3] + "/"
-    |   ds_process(source_folder=source_folder, folder_tag=folder_tag)
-
-
+    | from ducksoup_preproc import ds_process
+    | import glob
+    | for source_folder in glob.glob("videos/*/recordings/"):
+    |    folder_tag = source_folder.split("/")[-3] + "/"
+    |    ds_process(source_folder=source_folder, folder_tag=folder_tag)
+    |   
+    | Also, this function can be used in parallel with ds_process_parallel
     """
     # create target folder if it doesn't exist, if it exists, pass
     if not os.path.isdir(target_folder):
@@ -224,7 +224,14 @@ def ds_process(source_folder
     
     #change fps
     source_folder = target_folder + re_encode_path + folder_tag
-    change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path, extension=extension, target_fps=target_fps)
+    change_fps_folder(source_folder=source_folder
+                      , folder_tag=folder_tag
+                      , target_folder=target_folder
+                      , change_fps_path=change_fps_path
+                      , extension=extension
+                      , target_fps=target_fps
+                      , verbose= verbose
+                      )
 
     #trim videos
     source_folder = target_folder + change_fps_path + folder_tag
