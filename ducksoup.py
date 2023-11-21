@@ -68,7 +68,10 @@ def re_encode_folder(source_folder, folder_tag, target_folder, re_encode_path, e
         print()
 
     if not os.path.isdir(target_folder + re_encode_path):
-        os.mkdir(target_folder + re_encode_path)
+        try:
+            os.mkdir(target_folder + re_encode_path)
+        except:
+            pass            
 
     for file in glob.glob(source_folder +"*" + extension):
         if verbose:
@@ -89,7 +92,10 @@ def change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path=
         print()
 
     if not os.path.isdir(target_folder + change_fps_path):
-        os.mkdir(target_folder + change_fps_path)
+        try:
+            os.mkdir(target_folder + change_fps_path)
+        except:
+            pass            
 
     for file in glob.glob(source_folder +"*" + extension):
         if verbose:
