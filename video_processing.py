@@ -371,13 +371,18 @@ def convert_to_avi(source, target):
 	subprocess.call(command, shell=True)
 
 
-def change_frame_rate(source, target_fps, output):
+def change_frame_rate(source, target_fps, output, overwrite=False):
 	import subprocess
 	import os
-	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero -af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
+	if overwrite:
+		overwrite_string=" -y "
+	else:
+		overwrite_string=""
+
+	command = "ffmpeg -i "+source+" -avoid_negative_ts make_zero "+overwrite+"+-af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
 	subprocess.call(command, shell=True)
 
-def re_encode(source, output, target_fps=30, resolution="1280:720", preset="veryslow", crf = "18"):
+def re_encode(source, output, resolution="1280:720", preset="veryslow", crf = "18"):
     """
         Re-encode files with specific 
 		fps : number of FPS
@@ -388,14 +393,10 @@ def re_encode(source, output, target_fps=30, resolution="1280:720", preset="very
     """
     import subprocess
     import os
-    #re-encode
+    
+	#re-encode
     command = "ffmpeg -i "+source+" -vf scale="+resolution+" -preset "+preset+" -crf "+str(crf)+" "+output
     subprocess.call(command, shell=True)
-
-    #change frame rate
-    command = "ffmpeg -i "+output+" -y -avoid_negative_ts make_zero -af apad -q:v 1 -af aresample=async=1000 -filter:v fps="+str(target_fps) +" " +output
-    subprocess.call(command, shell=True)
-
 
 def crop_video(source_video, target_video, x=0, y=0,out_w=0 , out_h=0 ):
 	import subprocess

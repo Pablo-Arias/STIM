@@ -79,7 +79,29 @@ def re_encode_folder(source_folder, folder_tag, target_folder, re_encode_path, e
             
         file_tag = get_file_without_path(file)
         output = target_folder+ re_encode_path + folder_tag + file_tag + ".mp4"
-        re_encode(source=file, output=output, target_fps=30, resolution="1280:720", preset="veryslow", crf = "18")
+        re_encode(source=file, output=output, resolution=resolution, preset=preset, crf = crf)
+
+
+## --re_encode_folder 
+def change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path, extension=".mp4", target_fps=30):
+    if verbose:
+        print("Changing FPS of videos with ffmpeg...")
+        print()
+
+    if not os.path.isdir(target_folder + change_fps_path):
+        os.mkdir(target_folder + change_fps_path)
+
+    for file in glob.glob(source_folder +"*" + extension):
+        if verbose:
+            print("re-encoding : "+ file)
+
+        if not os.path.isdir(target_folder + change_fps_path + folder_tag):
+            os.mkdir(target_folder+ change_fps_path + folder_tag)
+            
+        file_tag = get_file_without_path(file)
+        output = target_folder+ change_fps_path + folder_tag + file_tag + ".mp4"
+
+        change_frame_rate(source=file, output=output, target_fps=target_fps, overwrite=True)
 
 
 ##-- combine_folder
@@ -138,14 +160,16 @@ def ds_process(source_folder
                             , combine_videos=True
                             , combined_path="combined/"
                             , combined_with_audio_path="with_audio/"
+                            , change_fps_path = "new_fps/"
                             , combine_audio_flag=True
                             , verbose=True
                             , resolution="1280:720"
                             , preset="veryslow"
                             , crf = "18"
-                                    ):
+                            , target_fps = "30"
+                            ):
     """
-    | A fucntion to preprocess recordings made with ducksoup.
+    | A function to preprocess recordings made with ducksoup.
     |
     |
     | This function trims, re-encodes, and combines the videos
@@ -159,8 +183,10 @@ def ds_process(source_folder
     |        This is useful to make sure that videos are in sync.
     |    combine_path : the name of the folder to use when combining the files
     |    verbose : whether to print a detailed output of the stages of the preprocessing
-
-
+    |    resolution="1280:720"
+    |    preset="veryslow" This is the preset used by open CV
+    |    crf = "18" CRF is the factor quality. CRF : use 18 for almost lossless. Lower is better but takes more size. More info here : https://superuser.com/questions/1556953/why-does-preset-veryfast-in-ffmpeg-generate-the-most-compressed-file-compared
+    |    target_fps = "30" Target FPS to resample videos
     | Usage Example: 
     |
     |from ducksoup_preproc import ds_process
@@ -184,17 +210,29 @@ def ds_process(source_folder
     if verbose:
         print(folder_tag)
         print()
+    
+    #reencode
+    re_encode_folder(source_folder=source_folder
+                     , folder_tag=folder_tag
+                     , target_folder=target_folder
+                     , re_encode_path=re_encode_path
+                     , extension=extension
+                     , resolution=resolution, preset=preset
+                     , crf = crf
+                     , verbose=verbose
+                     )
+    
+    #change fps
+    source_folder = target_folder + re_encode_path + folder_tag
+    change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path, extension=extension, target_fps=target_fps)
 
     #trim videos
+    source_folder = target_folder + change_fps_path + folder_tag
     trim_folder(source_folder=source_folder, folder_tag=folder_tag, target_folder=target_folder, trimed_path=trimed_path, extension=extension, verbose=verbose)
-
-    #reencode
-    source_folder = target_folder + trimed_path + folder_tag
-    re_encode_folder(source_folder=source_folder, folder_tag=folder_tag, target_folder=target_folder, re_encode_path=re_encode_path, extension=extension, resolution=resolution, preset=preset, crf = crf, verbose=verbose)
 
     #Combine videos
     if combine_videos:
-        source_folder = target_folder + re_encode_path + folder_tag
+        source_folder = target_folder + trimed_path + folder_tag
         combine_folder(source_folder=source_folder
                        , folder_tag=folder_tag
                        , target_folder=target_folder
@@ -204,9 +242,6 @@ def ds_process(source_folder
                        , verbose=verbose
                        , combine_audio_flag=combine_audio_flag
                        )
-
-
-
 
 
 ## Parallel processing functions
@@ -221,8 +256,9 @@ def parallelize_function(source_folder, folder_tag_idx =-3
                                     , combine_audio_flag=True
                                     , verbose=True
                                     , resolution="1280:720"
-                                    , preset="veryslow"
+                                    , preset="slow"
                                     , crf = "18"
+                                    , target_fps=30
                                     ):
     
     folder_tag = source_folder.split("/")[folder_tag_idx] + "/"
@@ -242,6 +278,7 @@ def parallelize_function(source_folder, folder_tag_idx =-3
                     , resolution=resolution
                     , preset=preset
                     , crf = crf
+                    , target_fps=target_fps
                     )
 
 def ds_process_parallel(sources , folder_tag_idx =-3
@@ -255,8 +292,9 @@ def ds_process_parallel(sources , folder_tag_idx =-3
                                     , combine_audio_flag=True
                                     , verbose=True
                                     , resolution="1280:720"
-                                    , preset="veryslow"
-                                    , crf = "18"                        
+                                    , preset="slow"
+                                    , crf = "18"   
+                                    , target_fps=30                     
                                     ):
     """
         from ducksoup import ds_process_parallel
@@ -285,5 +323,6 @@ def ds_process_parallel(sources , folder_tag_idx =-3
                                   , repeat(resolution)
                                   , repeat(preset)
                                   , repeat(crf)
+                                  , repeat(target_fps)
                                   )
                     )
