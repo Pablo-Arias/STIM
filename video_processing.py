@@ -394,7 +394,7 @@ def re_encode(source, output, resolution="1280:720", preset="veryslow", crf = "1
     import os
     
 	#re-encode
-    command = "ffmpeg -i "+source+" -vf scale="+resolution+" -preset "+preset+" -crf "+str(crf)+" --enable-libx264 --enable-encoder=libx264 "+output
+    command = "ffmpeg -i "+source+" -vf scale="+resolution+" -preset "+preset+" -crf "+str(crf)+" "+output
     subprocess.call(command, shell=True)
 
 def crop_video(source_video, target_video, x=0, y=0,out_w=0 , out_h=0 ):

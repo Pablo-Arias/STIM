@@ -27,10 +27,6 @@ import contextlib
 import collections
 import parselmouth
 from parselmouth.praat import call
-from praat_path import get_praat_path
-
-#global
-praat_path = get_praat_path()
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -238,19 +234,16 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 
 	"""
 	import subprocess
-	import os	
+	import os
+	import parselmouth
 	Fname = os.path.abspath(Fname)
 
-	out = subprocess.check_output([get_praat_path()
-									, "--run", os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat')
-									, Fname
-									, str(time_step)
-									, str(pitch_floor)
-									, str(pitch_ceiling)
-								 ]);
+	#execture script with parselmouth
+	script = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat')
+	_, out = parselmouth.praat.run_file(script, Fname, str(time_step), str(pitch_floor), str(pitch_ceiling), capture_output=True)
 
+	#Parse script
 	out = out.splitlines()
-
 	times = []
 	f0s = []
 
@@ -259,7 +252,7 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 		times.append(line[0])
 		f0s.append(line[1])
 
-	f0s = [np.nan if item == b'--undefined--' else float(item) for item in f0s]
+	f0s = [np.nan if item == u'--undefined--' else float(item) for item in f0s]
 
 	#If harmonicity threshold is defined, clean with harm thresh
 	if harmonicity_threshold:
@@ -298,7 +291,7 @@ def get_mean_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceilin
 
 	"""	
 	times, f0s = Extract_ts_of_pitch_praat(Fname, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
-	return np.nanmean(f0s)	
+	return np.nanmean(f0s)
 
 def get_pitch_std(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350, harmonicity_threshold=None):
 
@@ -633,18 +626,8 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 	
 	#Take the absolulte path
 	audio_file = os.path.abspath(audio_file)
-
-	#Call sub process
-	out = subprocess.check_output([praat_path
-		, "--run"
-		, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat')
-		, audio_file
-		, str(time_step)
-		, str(nb_formants)
-		, str(max_formant_freq)
-		, str(window_size)
-		, str(pre_emph)
-		]);
+	script = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_formants.praat')
+	_, out = parselmouth.praat.run_file(script, audio_file, str(time_step) , str(nb_formants), str(max_formant_freq), str(window_size), str(pre_emph), capture_output=True)
 
 	content = out.splitlines()
 
@@ -652,7 +635,7 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 	freqs_df = pd.DataFrame()
 	bws_df = pd.DataFrame()
 	for line in content:
-		line = [ np.nan if x == b'--undefined--' else float(x) for x in line.split()]
+		line = [ np.nan if x == u'--undefined--' else float(x) for x in line.split()]
 		
 		frequency = {}
 		bandwidth = {}
@@ -798,8 +781,8 @@ def get_mean_formant_praat(Fname):
 	import os
 	Fname = os.path.abspath(Fname)
 
-	script_name = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
-	x = subprocess.check_output(["/Applications/Praat.app/Contents/MacOS/Praat", "--run", script_name, Fname])
+	script = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'formants_mean.praat')
+	_, x = parselmouth.praat.run_file(script, Fname, capture_output=True)	
 	Title, F1, F2, F3, F4, F5 = x.splitlines()
 
 	return float(F1), float(F2), float(F3), float(F4), float(F5)
