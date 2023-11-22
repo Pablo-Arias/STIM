@@ -19,8 +19,7 @@ import pandas as pd
 import numpy as np
 
 from super_vp_commands import generate_LPC_analysis
-from parse_sdif import mean_matrix, mean_formant_from_sdif, formant_from_sdif
-from conversions import lin2db, db2lin, get_file_without_path
+from conversions import lin2db, get_file_without_path
 from six.moves import range
 from functools import reduce
 import contextlib
@@ -432,6 +431,7 @@ def formant_from_audio(audio_file, nb_formants, ana_winsize=512):
 
 	#generate svp sdif analysis and then read formants from sdif
 	from super_vp_commands import generate_formant_analysis
+	from parse_sdif import formant_from_sdif
 	generate_formant_analysis(audio_file, formant_analysis, nb_formants = nb_formants, ana_winsize = ana_winsize)
 	formants = formant_from_sdif(formant_analysis)
 	
@@ -508,6 +508,7 @@ def mean_formant_from_audio(audio_file, nb_formants, use_t_env = True, ana_winsi
 
 	#Generate sdif analysis file
 	from super_vp_commands import generate_formant_analysis, generate_tenv_formant_analysis
+	from parse_sdif import mean_formant_from_sdif
 	if use_t_env:
 		generate_tenv_formant_analysis(audio_file, analysis = formant_analysis, nb_formants = 5, wait = True, ana_winsize = ana_winsize)
 	else:
@@ -536,6 +537,7 @@ def get_formant_data_frame(audio_file, nb_formants = 5 ,t_env_or_lpc = "lpc", de
 		this function only works for mono files
 	"""
 	from super_vp_commands import generate_formant_analysis, generate_tenv_formant_analysis
+	from parse_sdif import formant_from_sdif
 
 	#Perform formant analysis either with lpc or t_env
 	analysis_name = "formant_generated_analysis_X2345.sdif"
@@ -672,7 +674,7 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 			harm = f0harm[index-1]
 			return harm
 		
-		#Compute f0 with super vp and take the harmonicity
+		#Could use praat here to do this
 		f0times, f0harm, _ = get_f0(audio_file = audio_file)
 
 		#Add harmonicity to bandwidth
@@ -1098,6 +1100,7 @@ def get_mean_lpc_from_audio(audio, wait = True, nb_coefs = 45, destroy_sdif_afte
 	warning : 
 		this function only works for mono files
 	"""
+	from parse_sdif import mean_matrix
 	path_and_name =  get_file_without_path(audio)
 	analysis = path_and_name + ".sdif"
 
