@@ -63,19 +63,19 @@ def get_spectral_centroid(audio_file, window_size = 256, noverlap = 0, plot_spec
 
 	#plot specgram
 	if plot_specgram:
-	    plt.figure()
-	    fig, ax = plt.subplots()
-	    plt.pcolormesh(t, f, Sxx, cmap = 'nipy_spectral')
-	    ax.axis('tight')
-	    plt.ylabel('Frequency [Hz]')
-	    plt.xlabel('Time [sec]')
-	    plt.title("Normal FFT of audio signal")
-	    plt.show()
+		plt.figure()
+		fig, ax = plt.subplots()
+		plt.pcolormesh(t, f, Sxx, cmap = 'nipy_spectral')
+		ax.axis('tight')
+		plt.ylabel('Frequency [Hz]')
+		plt.xlabel('Time [sec]')
+		plt.title("Normal FFT of audio signal")
+		plt.show()
 
 	centroid_list = []
 	for spectrum in np.transpose(Sxx):
-	    centroid_list.append(centroid(spectrum, f))
-	    
+		centroid_list.append(centroid(spectrum, f))
+	
 	return t, centroid_list
 
 def get_mean_spectral_centroid_when_sound(audio_file, RMS_threshold = -55, window_size = 512):
@@ -126,15 +126,15 @@ def get_intervals_of_sound(audio_file, RMS_threshold = -50, window_size = 512):
 	inside_sound = False
 	intervals = []
 	for i in range(len(rmss)):
-	    if inside_sound:
-	        if rmss[i] < RMS_threshold:
-	            end = t[i]
-	            intervals.append([begin, end])
-	            inside_sound = False                
-	    else:
-	        if rmss[i] > RMS_threshold: 
-	            begin = t[i]
-	            inside_sound = True                
+		if inside_sound:
+			if rmss[i] < RMS_threshold:
+				end = t[i]
+				intervals.append([begin, end])
+				inside_sound = False                
+		else:
+			if rmss[i] > RMS_threshold: 
+				begin = t[i]
+				inside_sound = True                
 
 	return intervals
 
@@ -203,18 +203,18 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 
 	#plot specgram
 	if plot_specgram:
-	    plt.figure()
-	    fig, ax = plt.subplots()
-	    plt.pcolormesh(t, f, Sxx, cmap = 'nipy_spectral')
-	    ax.axis('tight')
-	    plt.ylabel('Frequency [Hz]')
-	    plt.xlabel('Time [sec]')
-	    plt.title("Normal FFT of audio signal")
-	    plt.show()
+		plt.figure()
+		fig, ax = plt.subplots()
+		plt.pcolormesh(t, f, Sxx, cmap = 'nipy_spectral')
+		ax.axis('tight')
+		plt.ylabel('Frequency [Hz]')
+		plt.xlabel('Time [sec]')
+		plt.title("Normal FFT of audio signal")
+		plt.show()
 
 	centroid_list = []
 	for spectrum in np.transpose(Sxx):
-	    centroid_list.append(centroid(spectrum, f))
+		centroid_list.append(centroid(spectrum, f))
 	    
 	return t, centroid_list
 
@@ -805,6 +805,99 @@ def get_mean_tidy_formant_praat(Fname):
 
 	return pd.DataFrame.from_dict(data)
 
+def get_formant_dispersion(Fname, nb_formants_fd=5
+							, time_step=0.001
+							, window_size=0.1
+							, nb_formants=5
+							, max_formant_freq=5500
+							, pre_emph=50.0
+							, harmonicity_threshold=None
+							, formant_method='mean'
+
+	):
+	"""
+	Inputs:
+		Fname 				  : name of the file to use
+		nb_formants_fd  : nuùmber of formants to use in the computation of formant dispersion
+
+		harmonicity_threshold : harmonicty threshold to exclude parts of the sound whenc omputing mean formant frequency 
+								(between 0 and 1 : 1 is very harmonic, 0 is unharmonic)
+
+		
+		nb_formants 	: number of formants to estimate
+
+		Check the help from get_mean_formant_praat_harmonicity to see other detailed parameters
+
+	Output:
+		Formant dispersion
+	
+	Compute and return formant dispersion Following Fitch 1997 JASA Formula
+
+	"""
+	
+	#Get formant frequencies
+	df, db = get_mean_formant_praat_harmonicity(Fname
+							, time_step		= time_step
+							, window_size	= window_size
+							, nb_formants 	= nb_formants
+							, max_formant_freq  = max_formant_freq
+							, pre_emph 			= pre_emph
+							, harmonicity_threshold = harmonicity_threshold
+							, formant_method 		= formant_method
+		)
+
+	formants = df["Frequency"].values
+
+	#compute formant dispersion
+	fd = 0
+	for i in range(1, nb_formants_fd):
+		fd = fd + formants[i] - formants[i-1]
+	fd = fd / (nb_formants_fd -1)
+
+	#return formant dispersion
+	return fd
+
+def estimate_vtl(Fname 		, speed_of_sound 		= 335 
+							, time_step 			= 0.001
+							, window_size 			= 0.1
+							, nb_formants 			= 5
+							, max_formant_freq 		= 5500
+							, pre_emph 				= 50.0
+							, harmonicity_threshold = None
+							, formant_method 		= 'mean'
+				):
+	"""
+	Estimate vocal tract length following the formula in Fitch 1997
+	The speed_of_sound is usually ~335 m/s, and L is the vocal tract length in m.
+	
+	Inputs:
+		Fname 				  : name of the audio file to analyse (only works with mono files)
+		harmonicity_threshold : harmonicty threshold to exclude parts of the sound whenc omputing mean formant frequency 
+								(between 0 and 1 : 1 is very harmonic, 0 is unharmonic)
+
+		speed_of_sound 		  : speed of sound in m.s-1 (in this case the output will be in meters)
+		
+		Check the help from get_mean_formant_praat_harmonicity for other detailed inputs
+
+	Outputs:
+		vtl : estimated vocal tract length in meters (depends on the unit of speed of sound)
+
+	"""
+	#compute formant dispersion
+	fd = get_formant_dispersion(Fname 				= Fname
+							, time_step 			= time_step
+							, window_size 			= window_size
+							, nb_formants 			= nb_formants
+							, max_formant_freq 		= max_formant_freq
+							, pre_emph 				= pre_emph
+							, harmonicity_threshold = harmonicity_threshold
+							, formant_method 		= formant_method
+							)
+
+	#estimate vocal tract length
+	vtl = speed_of_sound/(2*fd)
+
+	return vtl
 	
 def analyse_audio_folder(source_folder
 						, speed_of_sound		= 335
@@ -843,7 +936,7 @@ def analyse_audio_folder(source_folder
 		parameter_tag		  : parameter tag should be composed of two values.
 									First, the value of the position in the name file where the tag is
 									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
-									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':5000} })
+									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':4900} })
 
 		print_transformed_file: for debuging purposes, put this to True to print each analysed file
 		formant_method   	  : the method to use to colapse formants. Either 'mean' or 'median'.
@@ -879,7 +972,7 @@ def analyse_audio_folder(source_folder
 			if 'pre_emph' 			   in list(parameters.keys()): pre_emph              = parameters['pre_emph'] 			   
 
 
-		#Get sound duratio
+		#Get sound duration
 		sound_duration = get_sound_duration(file)
 		if sound_duration < time_step:
 			print("not analysing " + file+ " because it's shorter than the time step")
@@ -985,99 +1078,7 @@ def analyse_audio_folder(source_folder
 
 	return df_stimuli
 
-def get_formant_dispersion(Fname, nb_formants_fd=5
-							, time_step=0.001
-							, window_size=0.1
-							, nb_formants=5
-							, max_formant_freq=5500
-							, pre_emph=50.0
-							, harmonicity_threshold=None
-							, formant_method='mean'
 
-	):
-	"""
-	Inputs:
-		Fname 				  : name of the file to use
-		nb_formants_fd  : nuùmber of formants to use in the computation of formant dispersion
-
-		harmonicity_threshold : harmonicty threshold to exclude parts of the sound whenc omputing mean formant frequency 
-								(between 0 and 1 : 1 is very harmonic, 0 is unharmonic)
-
-		
-		nb_formants 	: number of formants to estimate
-
-		Check the help from get_mean_formant_praat_harmonicity to see other detailed parameters
-
-	Output:
-		Formant dispersion
-	
-	Compute and return formant dispersion Following Fitch 1997 JASA Formula
-
-	"""
-	
-	#Get formant frequencies
-	df, db = get_mean_formant_praat_harmonicity(Fname
-							, time_step		= time_step
-							, window_size	= window_size
-							, nb_formants 	= nb_formants
-							, max_formant_freq  = max_formant_freq
-							, pre_emph 			= pre_emph
-							, harmonicity_threshold = harmonicity_threshold
-							, formant_method 		= formant_method
-		)
-
-	formants = df["Frequency"].values
-
-	#compute formant dispersion
-	fd = 0
-	for i in range(1, nb_formants_fd):
-		fd = fd + formants[i] - formants[i-1]
-	fd = fd / (nb_formants_fd -1)
-
-	#return formant dispersion
-	return fd
-
-def estimate_vtl(Fname 		, speed_of_sound 		= 335 
-							, time_step 			= 0.001
-							, window_size 			= 0.1
-							, nb_formants 			= 5
-							, max_formant_freq 		= 5500
-							, pre_emph 				= 50.0
-							, harmonicity_threshold = None
-							, formant_method 		= 'mean'
-				):
-	"""
-	Estimate vocal tract length following the formula in Fitch 1997
-	The speed_of_sound is usually ~335 m/s, and L is the vocal tract length in m.
-	
-	Inputs:
-		Fname 				  : name of the audio file to analyse (only works with mono files)
-		harmonicity_threshold : harmonicty threshold to exclude parts of the sound whenc omputing mean formant frequency 
-								(between 0 and 1 : 1 is very harmonic, 0 is unharmonic)
-
-		speed_of_sound 		  : speed of sound in m.s-1 (in this case the output will be in meters)
-		
-		Check the help from get_mean_formant_praat_harmonicity for other detailed inputs
-
-	Outputs:
-		vtl : estimated vocal tract length in meters (depends on the unit of speed of sound)
-
-	"""
-	#compute formant dispersion
-	fd = get_formant_dispersion(Fname 				= Fname
-							, time_step 			= time_step
-							, window_size 			= window_size
-							, nb_formants 			= nb_formants
-							, max_formant_freq 		= max_formant_freq
-							, pre_emph 				= pre_emph
-							, harmonicity_threshold = harmonicity_threshold
-							, formant_method 		= formant_method
-							)
-
-	#estimate vocal tract length
-	vtl = speed_of_sound/(2*fd)
-
-	return vtl
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -1193,25 +1194,25 @@ def get_spectrum(file, window_size = 256, noverlap = 0, plot_spec = False, plot_
 	                               , mode = 'magnitude'
 	                              )
 	if plot_spec:
-	    plt.figure()
-	    fig, ax = plt.subplots()
-	    plt.pcolormesh(t, f, Sxx, cmap = 'nipy_spectral')
-	    ax.axis('tight')
-	    plt.ylabel('Frequency [Hz]')
-	    plt.xlabel('Time [sec]')
-	    plt.title("Normal FFT of audio signal")
-	    plt.show()
+		plt.figure()
+		fig, ax = plt.subplots()
+		plt.pcolormesh(t, f, Sxx, cmap = 'nipy_spectral')
+		ax.axis('tight')
+		plt.ylabel('Frequency [Hz]')
+		plt.xlabel('Time [sec]')
+		plt.title("Normal FFT of audio signal")
+		plt.show()
 
 	mean_sxx = np.mean(Sxx, axis = 1)
 	if plot_mean_spec:
-	    plt.figure()
-	    fig, ax = plt.subplots()
-	    plt.semilogx(f,  mean_sxx)
-	    ax.axis('tight')
-	    plt.xlabel('Amplitude')
-	    plt.xlabel('Frequency [Hz]')
-	    plt.title("Mean spectrum of audio signal")
-	    plt.show()        
+		plt.figure()
+		fig, ax = plt.subplots()
+		plt.semilogx(f,  mean_sxx)
+		ax.axis('tight')
+		plt.xlabel('Amplitude')
+		plt.xlabel('Frequency [Hz]')
+		plt.title("Mean spectrum of audio signal")
+		plt.show()        
 
 
 	return f, t, Sxx
@@ -1297,7 +1298,7 @@ def get_rms_from_data(data, in_db = True):
 	from conversions import lin2db
 	rms = np.sqrt(np.mean(data**2))
 	if in_db:
-	    rms 		= lin2db(rms)
+		rms 		= lin2db(rms)
 	return rms
 
 
@@ -1552,7 +1553,7 @@ def vad_collector(sample_rate, frame_duration_ms,padding_duration_ms, vad, frame
 				# we are NOTTRIGGERED, but we have to start with the
 				# audio that's already in the ring buffer.
 				for f, s in ring_buffer:
-				    voiced_frames.append(f)
+					voiced_frames.append(f)
 				ring_buffer.clear()
 		else:
 			

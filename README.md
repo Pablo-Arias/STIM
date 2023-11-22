@@ -18,7 +18,7 @@ A set of wraper functions around IRCAM super-vp library
 A set of functions to handle video indexing, audio replacement in video, resolution changes, and more...
 
 ## Instalation and dependencies ##
-These python modules depend on several externals for them to work properly. If you want the full functionality of STIM you will also need to install IRCAM super-vp command line library and praat (https://www.fon.hum.uva.nl/praat/)
+These python modules depend on several externals for them to work properly. If you want the full functionality of STIM you will also need to install IRCAM super-vp command line library.
 
 Install other external dependencies with [homebrew](https://brew.sh/):
 ```
