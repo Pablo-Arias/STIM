@@ -60,7 +60,7 @@ def FSdifLoadFile(f0file, retrieve_nvts=False):
         return tlist, dlist, NVTs
     return tlist, dlist;
 
-def FSdifStoreFile(filename, times, data, frame_type="1FQ0", matrix_type="1FQ0", dtype=np.float, name_value_dict=None, NVTs=None):
+def FSdifStoreFile(filename, times, data, frame_type="1FQ0", matrix_type="1FQ0", dtype=float, name_value_dict=None, NVTs=None):
     '''
     save sdif file containing a single frame/matrix type combination with a matrix type containing
     a single row into a list with elements of the form ([times], [np.array(data)])
