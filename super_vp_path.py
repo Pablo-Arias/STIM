@@ -13,9 +13,9 @@ def get_super_vp_path():
 	import glob, os
 	from sys import platform
 	if platform == "linux" or platform == "linux2":
-    	#Todo
-		svp_version = "" #todo
-		print("missing linux supervp")
+    	#LINUX
+		svp_version = os.getenv("HOME") + "/svp/bin/supervp"
+		print("SUPER VP PATH : " + svp_version)
 
 	elif platform == "darwin":
     	# OS X
