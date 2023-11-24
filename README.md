@@ -18,14 +18,14 @@ A set of wraper functions around IRCAM super-vp library
 A set of functions to handle video indexing, audio replacement in video, resolution changes, and more...
 
 ## Instalation and dependencies ##
-These python modules depend on several externals for them to work properly. Moreover, if you want the full functionality of STIM you will also need to install IRCAM super-vp command line library (get it here : https://forum.ircam.fr/projects/detail/analysissynthesis-command-line-tools/).
+These python modules depend on several external libraries to work well. 
 
-Install other external dependencies with [homebrew](https://brew.sh/):
+Install external dependencies with [homebrew](https://brew.sh/):
 ```
-brew install ffmpeg opencv libsndfile cmake autoconf automake swig
+brew install ffmpeg opencv libsndfile
 ```
 
-To install STIM, I recomend using conda package manager. In the following, replace STIM_FOLDER with the path to the STIM folder.
+To install STIM, I recomend using the anaconda package manager. In the following, replace STIM_FOLDER with the path to the STIM folder.
 ```
 cd STIM_FOLDER
 git clone https://github.com/Pablo-Arias/STIM.git
@@ -41,6 +41,8 @@ conda develop STIM_FOLDER
 conda install -c roebel easdif
 pip install scipy soundfile pyloudnorm pandas pyo praat-parselmouth matplotlib numpy opencv-python
 ```
+
+If you want the full functionality of STIM you will also need to install IRCAM super-vp command line library. Get it here : https://forum.ircam.fr/projects/detail/analysissynthesis-command-line-tools/.
 
 Run unit tests to see if everything worked:
 ```
