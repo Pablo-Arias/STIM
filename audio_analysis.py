@@ -331,7 +331,7 @@ def get_pulse_features(sound, f0min=75, f0max=450, time_step=0.01, silence_thres
 	return pulses_df
 
 # get_harmonicity_ts
-def get_harmonicity_ts(file, time_step):
+def get_harmonicity_ts(file, time_step, normalise=True):
 	"""
 	Use Parselmouth to extract harmonicity of file
 	"""
@@ -339,6 +339,19 @@ def get_harmonicity_ts(file, time_step):
 	duration = get_sound_duration(file)
 	harm_time = np.arange(0, duration, time_step)
 	harm_vals = [harmonicity.get_value(i) for i in harm_time]
+
+	if normalise:
+		import numpy as np
+
+		#Normalise between 0 and 1
+		for cpt in range(len(harm_vals)):
+			if harm_vals[cpt] < -200:
+				harm_vals[cpt] = -200
+			if harm_vals[cpt] > 1:
+				harm_vals[cpt] = 1
+
+		for cpt in range(len(harm_vals)):
+			harm_vals[cpt] = (harm_vals[cpt] + 200) / np.nanmax(harm_vals)
 
 	return harm_time, harm_vals
 
@@ -484,10 +497,11 @@ def get_tidy_formants(audio_file, nb_formants=5, ana_winsize=512, add_harmonicit
 			index = bisect(f0times, formant_time)
 			harm = f0harm[index-1]
 			return harm
+		
+		harm_time, harm_vals = get_harmonicity_ts(audio_file, time_step=time_step, normalise=True)
 
-		f0times, f0harm, _ = get_f0(audio_file = audio_file)
 		all_formants = all_formants.reset_index()
-		all_formants["harmonicity"] = all_formants.apply(add_harm, axis=1, args=(f0times, f0harm,)) 
+		all_formants["harmonicity"] = all_formants.apply(add_harm, axis=1, args=(harm_time, harm_vals,)) 
 
 	#return formants
 	return all_formants
@@ -686,16 +700,16 @@ def get_formant_ts_praat(audio_file, time_step=0.001, window_size=0.1, nb_forman
 			return harm
 		
 		#Could use praat here to do this
-		f0times, f0harm, _ = get_f0(audio_file = audio_file)
+		harm_time, harm_vals = get_harmonicity_ts(audio_file, time_step=time_step, normalise=True)
 
 		#Add harmonicity to bandwidth
 		bws_df = bws_df.reset_index()
-		bws_df["harmonicity"] = bws_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
+		bws_df["harmonicity"] = bws_df.apply(add_harm, axis=1, args=(harm_time, harm_vals,))
 		bws_df = bws_df.set_index("time")
 
 		#Add harmonicity to frequency
 		freqs_df = freqs_df.reset_index()
-		freqs_df["harmonicity"] = freqs_df.apply(add_harm, axis=1, args=(f0times, f0harm,))
+		freqs_df["harmonicity"] = freqs_df.apply(add_harm, axis=1, args=(harm_time, harm_vals,))
 		freqs_df = freqs_df.set_index("time")
 
 	#Return frequencies and bandwidths dataframes	
@@ -1610,32 +1624,19 @@ def analyse_audio_file(file
 		#Add formants
 		for index in range(0, nb_formants):
 			aux_df["F"+str(index+1)] = [formants[index]]
-
-		#Add formants std
-		for index in range(0, nb_formants):
 			aux_df["F"+str(index+1)+"_std"] = [formants_std[index]]
 
-		#Add Bandwidths
-		for index in range(0, nb_formants):
+			#Add Bandwidths
 			aux_df["F"+str(index+1)+"bw"] = [bws[index]]
-		
-		#Add Bandwidths
-		for index in range(0, nb_formants):
 			aux_df["F"+str(index+1)+"bw_std"] = [bws_std[index]]
 	else:
 		#Add nans everywhere
 		for index in range(0, nb_formants):
 			aux_df["F"+str(index+1)] = [float("nan")]
-
-		for index in range(0, nb_formants):
 			aux_df["F"+str(index+1)+"_std"] = [float("nan")]
 		
-		#Add Bandwidths
-		for index in range(0, nb_formants):
+			#Add Bandwidths
 			aux_df["F"+str(index+1)+"bw"] = [float("nan")]
-		
-		#Add Bandwidths
-		for index in range(0, nb_formants):
 			aux_df["F"+str(index+1)+"bw_std"] = [float("nan")]
 
 
@@ -1746,7 +1747,6 @@ def analyse_audio_folder_parallel(source_folder
 	Analyse all the sounds from a folder and returns a data frame with key vocal features using parallel computations (In different CPU cores).
 	Inputs:
 		source_folder 		  : Folder with all the sounds to analyse, prefer mono files, and wav
-		harmonicity_threshold : Threshold to filter formant frequencies
 		speed_of_sound		  : speed of sound to compute vocal tract length in m.s-1
 		time_step			  : The time step to estimate the formants (this is passed to Praat)
 		window_size			  : The window size of the formant analysis IN SECONDS  (this is passed to Praat)
@@ -1757,6 +1757,7 @@ def analyse_audio_folder_parallel(source_folder
 								(5500 usually works well for female voices)
 								Check praat's documentation to know more
 		pre_emph			  : pre emphasis : check praat documentation on formant estimation
+		harmonicity_threshold : Harmonicity Threshold to filter fundamental and formant frequencies
 		sc_rms_thresh		  : Amplitude threshold to remove from sound in spectral centroid analysis (in dB)
 		sc_ws 		  		  : Window Size in samples for the spectral centoid analysis
 		parameter_tag		  : parameter tag should be composed of two values.
