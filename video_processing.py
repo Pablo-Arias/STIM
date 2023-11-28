@@ -47,6 +47,31 @@ def extract_audio(video_file, target_name):
 
 	return target_name
 
+def extract_audio_folder(source, target_folder= "analysis_file/", to_mono=False):
+	"""
+	Extracts the audio of a folder with videos.
+	Source should be in glob.glob style
+	For instance : source = "folder/*.mp4"
+	target_folder = "analysis_file/"
+	to_mono : If True, convert files to mono
+	"""
+	import os
+	from conversions import get_file_without_path
+	from video_processing import extract_audio
+	from transform_audio import wav_to_mono
+	import glob
+
+	try:
+		os.mkdir(target_folder)
+	except:
+		pass
+
+	for file in glob.glob(source):
+		file_tag = get_file_without_path(file)
+		target_file = target_folder + file_tag + ".wav"
+		extract_audio(file, target_file)
+		if to_mono:
+			wav_to_mono(target_file, target_file)
 
 def replace_audio(video_file, new_audio, target_video):
 	"""

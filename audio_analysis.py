@@ -330,6 +330,17 @@ def get_pulse_features(sound, f0min=75, f0max=450, time_step=0.01, silence_thres
 	pulses_df = pulses_df.merge(hnr_df   , on ="sound")
 	return pulses_df
 
+# get_harmonicity_ts
+def get_harmonicity_ts(file, time_step):
+	"""
+	Use Parselmouth to extract harmonicity of file
+	"""
+	harmonicity = parselmouth.Sound(file).to_harmonicity()
+	duration = get_sound_duration(file)
+	harm_time = np.arange(0, duration, time_step)
+	harm_vals = [harmonicity.get_value(i) for i in harm_time]
+
+	return harm_time, harm_vals
 
 #from : https://osf.io/qe9k4/
 def get_jitter(sound, f0min=75, f0max=450, start=0, stop=0, period_floor=0.0001, period_ceiling=0.02, max_period_factor=1.3):
@@ -900,187 +911,6 @@ def estimate_vtl(Fname 		, speed_of_sound 		= 335
 	vtl = speed_of_sound/(2*fd)
 
 	return vtl
-	
-def analyse_audio_folder(source_folder
-						, speed_of_sound		= 335
-						, time_step				= 0.001
-						, window_size			= 0.01 
-						, pitch_floor			= 75
-						, pitch_ceiling			= 350
-						, nb_formants			= 6
-						, nb_formants_fd		= 5
-						, max_formant_freq		= 5500
-						, pre_emph				= 50.0
-						, harmonicity_threshold = None 
-						, sc_rms_thresh         = -60
-						, sc_ws                 = 512
-						, parameter_tag         = None
-						, print_transformed_file = False
-						, formant_method		 = 'mean'
-						):
-	"""
-	Analyse all the sounds from a folder and returns a data frame with key vocal features
-	Inputs:
-		source_folder 		  : Folder with all the sounds to analyse, prefer mono files, and wav
-		harmonicity_threshold : Threshold to filter formant frequencies
-		speed_of_sound		  : speed of sound to compute vocal tract length in m.s-1
-		time_step			  : The time step to estimate the formants (this is passed to Praat)
-		window_size			  : The window size of the formant analysis IN SECONDS  (this is passed to Praat)
-		nb_formants			  : Number of formants to estimate  (this is passed to Praat)
-		nb_formants_fd 		  : Number of formants to use in the formant dispersion analysis  (this is passed to Praat)
-								nb_formants_fd has to be <= to nb_formants
-		max_formant_freq	  : Maximum formant frequency available, this is an important praat parameter 
-								(5500 usually works well for female voices)
-								Check praat's documentation to know more
-		pre_emph			  : pre emphasis : check praat documentation on formant estimation
-		sc_rms_thresh		  : Amplitude threshold to remove from sound in spectral centroid analysis (in dB)
-		sc_ws 		  		  : Window Size in samples for the spectral centoid analysis
-		parameter_tag		  : parameter tag should be composed of two values.
-									First, the value of the position in the name file where the tag is
-									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
-									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':4900} })
-
-		print_transformed_file: for debuging purposes, put this to True to print each analysed file
-		formant_method   	  : the method to use to colapse formants. Either 'mean' or 'median'.
-
-	Output:
-		Beautiful dataframe with all the features
-
-	"""
-
-	df_stimuli = pd.DataFrame()
-
-	cpt=0
-	#for each file in source folder, get all the features
-	for file in glob.glob(source_folder+"/*.wav"):
-		if print_transformed_file:
-			print(file)
-		#handle name of file
-		base = get_file_without_path(file)
-
-		#Handle updated parameter tags
-		if parameter_tag:
-			index = parameter_tag[0]
-			key   = base[index]
-			parameters = parameter_tag[1][key]
-
-			#update analysis parameters to match the file tag
-			if 'harmonicity_threshold' in list(parameters.keys()): harmonicity_threshold = parameters['harmonicity_threshold']
-			if 'time_step' 			   in list(parameters.keys()): time_step             = parameters['time_step'] 	
-			if 'window_size' 		   in list(parameters.keys()): window_size           = parameters['window_size'] 	
-			if 'nb_formants' 		   in list(parameters.keys()): nb_formants           = parameters['nb_formants'] 		   
-			if 'nb_formants_fd' 	   in list(parameters.keys()): nb_formants_fd        = parameters['nb_formants_fd'] 	   
-			if 'max_formant_freq' 	   in list(parameters.keys()): max_formant_freq      = parameters['max_formant_freq'] 	   
-			if 'pre_emph' 			   in list(parameters.keys()): pre_emph              = parameters['pre_emph'] 			   
-
-
-		#Get sound duration
-		sound_duration = get_sound_duration(file)
-		if sound_duration < time_step:
-			print("not analysing " + file+ " because it's shorter than the time step")
-			continue
-
-		#Get formant frequencies
-		df, db = get_mean_formant_praat_harmonicity(file 
-											, time_step        = time_step
-											, window_size      = window_size
-											, nb_formants      = nb_formants
-											, max_formant_freq = max_formant_freq
-											, pre_emph         = pre_emph
-											, harmonicity_threshold   = harmonicity_threshold
-											, formant_method		  = formant_method
-											)
-
-		#Formants
-		formants     = df["Frequency"].values
-		formants_std = df["Frequency_std"].values
-
-		#Bandwidths
-		bws     = db["Bandwidth"].values
-		bws_std = db["Bandwidth_std"].values
-
-
-		#compute formant dispersion & vtl
-		if len(formants) >= nb_formants_fd:
-			fd = 0
-			for i in range(1, nb_formants_fd):
-				fd = fd + formants[i] - formants[i-1]
-			fd = fd / (nb_formants_fd -1)
-
-			#Compute vocal tract length following Fitch 1997 formulae
-			vtl = speed_of_sound/(2*fd)
-
-		else:
-			fd  = float("nan")
-			vtl = float("nan")
-
-		#pitch descriptors
-		times, f0s = Extract_ts_of_pitch_praat(file, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
-
-		pitch_mean = np.nanmean(f0s)
-		pitch_std = np.nanstd(f0s)
-
-		#compute mean centroid
-		centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = sc_rms_thresh, window_size = sc_ws)
-
-		#create dictionary with values and then append to general dataframe
-		aux_dict = {}
-
-		#Add fle and CGS
-		aux_dict["File"] = base
-		aux_dict["CGS"] = centroid
-		
-		#Add formant information
-		if len(formants) == nb_formants:
-			#Add formants
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)] = formants[index]
-
-			#Add formants std
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)+"_std"] = formants_std[index]
-
-			#Add Bandwidths
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)+"bw"] = bws[index]
-			
-			#Add Bandwidths
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)+"bw_std"] = bws_std[index]
-		else:
-			#Add nans everywhere
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)] = float("nan")
-
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)+"_std"] = float("nan")
-			
-			#Add Bandwidths
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)+"bw"] = float("nan")
-			
-			#Add Bandwidths
-			for index in range(0, nb_formants):
-				aux_dict["F"+str(index+1)+"bw_std"] = float("nan")
-
-
-		#Add other descriptors
-		aux_dict["pitch_mean"]   	= pitch_mean
-		aux_dict["pitch_std"]   	= pitch_std
-		aux_dict["formant_disp"] 	= fd
-		aux_dict["vtl"]   		 	= vtl
-		aux_dict["sound_duration"]  = sound_duration
-		
-		#convert dict to dataframe
-		aux_df = pd.DataFrame(aux_dict, index=[cpt])
-
-		#append df to general dataframe
-		df_stimuli = df_stimuli.append(aux_df)
-		cpt+=1
-
-	return df_stimuli
-
-
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -1430,6 +1260,22 @@ def get_mean_rms_level_when_sound(source, rms_threshold = -50, window_size = 163
 	else:
 		return np.nan
 
+def get_talking_ts(file, threshold=-50, time_step=0.01):
+    silence_tags = find_silence(file, threshold=threshold)
+    duration = get_sound_duration(file)
+    times = np.arange(0, duration, time_step)
+
+    talking_vals = []
+    for time in times:
+        talking=True
+        for interval in silence_tags:
+            if interval[0] < time and time < interval[1]:
+                talking=False
+                continue
+    
+        talking_vals.append(talking)
+    
+    return times, talking_vals
 
 def get_silence_level(source, window_size = 16384):
 	"""
@@ -1628,3 +1474,512 @@ def get_voiced_segments_vad(audio_file, vad=3, frame_duration_ms=30, padding_dur
 
 
 	return time_tags
+
+
+# -------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+# ------ AUDIO BATCH Analyses  --------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------------------------------#
+
+## analyse_audio_file
+def analyse_audio_file(file
+						, speed_of_sound		= 335
+						, time_step				= 0.001
+						, window_size			= 0.01 
+						, pitch_floor			= 75
+						, pitch_ceiling			= 350
+						, nb_formants			= 6
+						, nb_formants_fd		= 5
+						, max_formant_freq		= 5500
+						, pre_emph				= 50.0
+						, harmonicity_threshold = None 
+						, sc_rms_thresh         = -60
+						, sc_ws                 = 512
+						, parameter_tag         = None
+						, print_transformed_file = False
+						, formant_method		 = 'mean'
+						, target_folder			 = "audio_analysis/"
+						):
+	"""
+	This functions extracts mean sound features of a specific recording.
+	Harmonicity threshold : is used to clean formant and pitch values
+	sc_rms_thresh : RMS threshold used to clean SC values
+
+	"""
+	#handle name of file
+	base = get_file_without_path(file)
+	
+	#File to save analyses
+	analysis_file = target_folder + base + ".csv"
+
+	if not os.path.isfile(analysis_file):
+		open(analysis_file, 'a').close()
+	else:
+		print("Analysis for file "+ analysis_file +" exists, skipping ")
+	
+
+	if print_transformed_file:
+		print("Starting analysis for file : " + file)
+
+	#Handle updated parameter tags
+	if parameter_tag:
+		index = parameter_tag[0]
+		key   = base[index]
+		parameters = parameter_tag[1][key]
+
+		#update analysis parameters to match the file tag
+		if 'harmonicity_threshold' in list(parameters.keys()): harmonicity_threshold = parameters['harmonicity_threshold']
+		if 'time_step' 			   in list(parameters.keys()): time_step             = parameters['time_step'] 	
+		if 'window_size' 		   in list(parameters.keys()): window_size           = parameters['window_size'] 	
+		if 'nb_formants' 		   in list(parameters.keys()): nb_formants           = parameters['nb_formants'] 		   
+		if 'nb_formants_fd' 	   in list(parameters.keys()): nb_formants_fd        = parameters['nb_formants_fd'] 	   
+		if 'max_formant_freq' 	   in list(parameters.keys()): max_formant_freq      = parameters['max_formant_freq'] 	   
+		if 'pre_emph' 			   in list(parameters.keys()): pre_emph              = parameters['pre_emph'] 	
+		if 'pitch_floor' 		   in list(parameters.keys()): pitch_floor           = parameters['pitch_floor'] 
+		if 'pitch_ceiling' 		   in list(parameters.keys()): pitch_ceiling         = parameters['pitch_ceiling'] 			   				   
+
+
+	#Get sound duration
+	sound_duration = get_sound_duration(file)
+	if sound_duration < time_step:
+		print("not analysing " + file+ " because it's shorter than the time step")
+		return
+
+	#Get formant frequencies
+	df, db = get_mean_formant_praat_harmonicity(file 
+										, time_step        = time_step
+										, window_size      = window_size
+										, nb_formants      = nb_formants
+										, max_formant_freq = max_formant_freq
+										, pre_emph         = pre_emph
+										, harmonicity_threshold   = harmonicity_threshold
+										, formant_method		  = formant_method
+										)
+
+	#Formants
+	formants     = df["Frequency"].values
+	formants_std = df["Frequency_std"].values
+
+	#Bandwidths
+	bws     = db["Bandwidth"].values
+	bws_std = db["Bandwidth_std"].values
+
+
+	#compute formant dispersion & vtl
+	if len(formants) >= nb_formants_fd:
+		fd = 0
+		for i in range(1, nb_formants_fd):
+			fd = fd + formants[i] - formants[i-1]
+		fd = fd / (nb_formants_fd -1)
+
+		#Compute vocal tract length following Fitch 1997 formulae
+		vtl = speed_of_sound/(2*fd)
+
+	else:
+		fd  = float("nan")
+		vtl = float("nan")
+
+	#pitch descriptors
+	times, f0s = Extract_ts_of_pitch_praat(file, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling, harmonicity_threshold=harmonicity_threshold)
+
+	pitch_mean = np.nanmean(f0s)
+	pitch_std = np.nanstd(f0s)
+
+	#compute mean centroid
+	centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = sc_rms_thresh, window_size = sc_ws)
+
+	#RMS related features
+	#TODO : Add RMS related features if needed
+	#silence_level            = get_silence_level(file, window_size_silence_level=window_size_silence_level)
+	#mean_rms                 = get_mean_rms_level_when_sound(rms_threshold= rms_threshold, window_size= window_size_rms)
+	#mean_rms_when_sound      = get_mean_rms_level_when_sound(rms_threshold= rms_threshold, window_size= window_size_rms)
+	#TODO : Add time speaking
+
+	#create dictionary with values and then append to general dataframe
+	aux_df = pd.DataFrame()
+
+	#Add fle and CGS
+	aux_df["File"] = [base]
+	aux_df["CGS"] = [centroid]
+	
+	#Add formant information
+	if len(formants) == nb_formants:
+		#Add formants
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)] = [formants[index]]
+
+		#Add formants std
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)+"_std"] = [formants_std[index]]
+
+		#Add Bandwidths
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)+"bw"] = [bws[index]]
+		
+		#Add Bandwidths
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)+"bw_std"] = [bws_std[index]]
+	else:
+		#Add nans everywhere
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)] = [float("nan")]
+
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)+"_std"] = [float("nan")]
+		
+		#Add Bandwidths
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)+"bw"] = [float("nan")]
+		
+		#Add Bandwidths
+		for index in range(0, nb_formants):
+			aux_df["F"+str(index+1)+"bw_std"] = [float("nan")]
+
+
+	#Add other descriptors
+	aux_df["pitch_mean"]   	= [pitch_mean]
+	aux_df["pitch_std"]   	= [pitch_std]
+	aux_df["formant_disp"] 	= [fd]
+	aux_df["vtl"]   		= [vtl]
+	aux_df["sound_duration"]  = [sound_duration]
+
+	#append df to general dataframe
+	aux_df.to_csv(analysis_file)
+	
+## analyse_audio_folder
+def analyse_audio_folder(source_folder
+						, speed_of_sound		= 335
+						, time_step				= 0.001
+						, window_size			= 0.01 
+						, pitch_floor			= 75
+						, pitch_ceiling			= 350
+						, nb_formants			= 6
+						, nb_formants_fd		= 5
+						, max_formant_freq		= 5500
+						, pre_emph				= 50.0
+						, harmonicity_threshold = None 
+						, sc_rms_thresh         = -60
+						, sc_ws                 = 512
+						, parameter_tag         = None
+						, print_transformed_file = False
+						, formant_method		 = 'mean'
+						, target_folder			 = "audio_analysis/"
+						):
+	"""
+	Analyse all the sounds from a folder and returns a data frame with key vocal features
+	Inputs:
+		source_folder 		  : Folder with all the sounds to analyse, prefer mono files, and wav
+		harmonicity_threshold : Threshold to filter formant frequencies
+		speed_of_sound		  : speed of sound to compute vocal tract length in m.s-1
+		time_step			  : The time step to estimate the formants (this is passed to Praat)
+		window_size			  : The window size of the formant analysis IN SECONDS  (this is passed to Praat)
+		nb_formants			  : Number of formants to estimate  (this is passed to Praat)
+		nb_formants_fd 		  : Number of formants to use in the formant dispersion analysis  (this is passed to Praat)
+								nb_formants_fd has to be <= to nb_formants
+		max_formant_freq	  : Maximum formant frequency available, this is an important praat parameter 
+								(5500 usually works well for female voices)
+								Check praat's documentation to know more
+		pre_emph			  : pre emphasis : check praat documentation on formant estimation
+		sc_rms_thresh		  : Amplitude threshold to remove from sound in spectral centroid analysis (in dB)
+		sc_ws 		  		  : Window Size in samples for the spectral centoid analysis
+		parameter_tag		  : parameter tag should be composed of two values.
+									First, the value of the position in the name file where the tag is
+									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
+									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':4900} })
+
+		print_transformed_file: for debuging purposes, put this to True to print each analysed file
+		formant_method   	  : the method to use to colapse formants. Either 'mean' or 'median'.
+
+	Output:
+		Beautiful dataframe with all the features
+
+	"""
+	try:
+		os.mkdir(target_folder)
+	except:
+		pass
+	
+	#for each file in source folder, get all the features
+	for file in glob.glob(source_folder):
+		analyse_audio_file(file
+					    , speed_of_sound		= speed_of_sound
+						, time_step				= time_step
+						, window_size			= window_size
+						, pitch_floor			= pitch_floor
+						, pitch_ceiling			= pitch_ceiling
+						, nb_formants			= nb_formants
+						, nb_formants_fd		= nb_formants_fd
+						, max_formant_freq		= max_formant_freq
+						, pre_emph				= pre_emph
+						, harmonicity_threshold = harmonicity_threshold 
+						, sc_rms_thresh         = sc_rms_thresh
+						, sc_ws                 = sc_ws
+						, parameter_tag         = parameter_tag
+						, print_transformed_file = print_transformed_file
+						, formant_method		 = formant_method
+						, target_folder			 = target_folder
+						)
+
+## analyse_audio_folder_parallel
+def analyse_audio_folder_parallel(source_folder
+						, speed_of_sound		= 335
+						, time_step				= 0.001
+						, window_size			= 0.01 
+						, pitch_floor			= 75
+						, pitch_ceiling			= 350
+						, nb_formants			= 6
+						, nb_formants_fd		= 5
+						, max_formant_freq		= 5500
+						, pre_emph				= 50.0
+						, harmonicity_threshold = None 
+						, sc_rms_thresh         = -60
+						, sc_ws                 = 512
+						, parameter_tag         = None
+						, print_transformed_file = False
+						, formant_method		 = 'mean'
+						, target_folder			 = "audio_analysis/"
+						):
+	"""
+	Analyse all the sounds from a folder and returns a data frame with key vocal features using parallel computations (In different CPU cores).
+	Inputs:
+		source_folder 		  : Folder with all the sounds to analyse, prefer mono files, and wav
+		harmonicity_threshold : Threshold to filter formant frequencies
+		speed_of_sound		  : speed of sound to compute vocal tract length in m.s-1
+		time_step			  : The time step to estimate the formants (this is passed to Praat)
+		window_size			  : The window size of the formant analysis IN SECONDS  (this is passed to Praat)
+		nb_formants			  : Number of formants to estimate  (this is passed to Praat)
+		nb_formants_fd 		  : Number of formants to use in the formant dispersion analysis  (this is passed to Praat)
+								nb_formants_fd has to be <= to nb_formants
+		max_formant_freq	  : Maximum formant frequency available, this is an important praat parameter 
+								(5500 usually works well for female voices)
+								Check praat's documentation to know more
+		pre_emph			  : pre emphasis : check praat documentation on formant estimation
+		sc_rms_thresh		  : Amplitude threshold to remove from sound in spectral centroid analysis (in dB)
+		sc_ws 		  		  : Window Size in samples for the spectral centoid analysis
+		parameter_tag		  : parameter tag should be composed of two values.
+									First, the value of the position in the name file where the tag is
+									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
+									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':4900} })
+
+		print_transformed_file: for debuging purposes, put this to True to print each analysed file
+		formant_method   	  : the method to use to colapse formants. Either 'mean' or 'median'.
+
+	Output:
+		Beautiful dataframe with all the features
+
+	"""
+	import multiprocessing
+	from itertools import repeat	
+
+	try:
+		os.mkdir(target_folder)
+	except:
+		pass
+
+	pool_obj = multiprocessing.Pool()
+	files     = glob.glob(source_folder)
+
+	pool_obj.starmap(analyse_audio_file, zip(files
+										, repeat(speed_of_sound)
+										, repeat(time_step)
+										, repeat(window_size)
+										, repeat(pitch_floor)
+										, repeat(pitch_ceiling)
+										, repeat(nb_formants)
+										, repeat(nb_formants_fd)
+										, repeat(max_formant_freq)
+										, repeat(pre_emph)
+										, repeat(harmonicity_threshold)
+										, repeat(sc_rms_thresh)
+										, repeat(sc_ws)
+										, repeat(parameter_tag)
+										, repeat(print_transformed_file)
+										, repeat(formant_method)
+										, repeat(target_folder)
+										)
+					)
+
+## analyse_audio_file_ts
+def analyse_audio_file_ts(file
+						, time_step				= 0.001
+						, praat_ws			    = 0.01 
+						, sc_ws                 = 512
+						, rms_ws                = 512
+						, pitch_floor			= 75
+						, pitch_ceiling			= 350
+						, nb_formants			= 6
+						, max_formant_freq		= 5500
+						, pre_emph				= 50.0
+						, parameter_tag         = None
+						, print_transformed_file = False
+						, silence_threshold      = -50
+						, target_folder			 = "audio_analysis/"
+						, plot_features          = False
+						):
+	"""
+	This functions extracts mean sound features of a specific recording.
+		sc_ws = this is in samples, the size of the FFT
+	"""
+	#handle name of file
+	file_tag = get_file_without_path(file)
+
+	#Create result folder
+	os.makedirs(target_folder, exist_ok=True)
+	
+	#File to save analyses
+	analysis_file = target_folder + file_tag + ".csv"
+
+	if not os.path.isfile(analysis_file):
+		open(analysis_file, 'a').close()
+	else:
+		print("Analysis for file "+ analysis_file +" exists, skipping ")
+		return
+
+	if print_transformed_file:
+		print("Starting analysis for file : " + file)
+
+	#Handle updated parameter tags
+	if parameter_tag:
+		index = parameter_tag[0]
+		key   = file_tag[index]
+		parameters = parameter_tag[1][key]
+
+		#update analysis parameters to match the file tag
+		if 'harmonicity_threshold' in list(parameters.keys()): harmonicity_threshold = parameters['harmonicity_threshold']
+		if 'time_step' 			   in list(parameters.keys()): time_step             = parameters['time_step'] 	
+		if 'window_size' 		   in list(parameters.keys()): window_size           = parameters['window_size'] 	
+		if 'nb_formants' 		   in list(parameters.keys()): nb_formants           = parameters['nb_formants'] 		   
+		if 'nb_formants_fd' 	   in list(parameters.keys()): nb_formants_fd        = parameters['nb_formants_fd'] 	   
+		if 'max_formant_freq' 	   in list(parameters.keys()): max_formant_freq      = parameters['max_formant_freq'] 	   
+		if 'pre_emph' 			   in list(parameters.keys()): pre_emph              = parameters['pre_emph'] 
+		if 'pitch_floor' 		   in list(parameters.keys()): pitch_floor           = parameters['pitch_floor'] 
+		if 'pitch_ceiling' 		   in list(parameters.keys()): pitch_ceiling         = parameters['pitch_ceiling'] 			   
+
+
+
+	#Get formant frequencies
+	freqs_df, bws_df =	get_formant_ts_praat(file
+											, time_step=time_step
+											, window_size=praat_ws
+											, nb_formants=nb_formants
+											, max_formant_freq=max_formant_freq
+											, pre_emph=pre_emph
+											, add_harmonicity=False
+											)
+	freqs_df = freqs_df.reset_index().pivot(index=["time"], columns="Formant",values="Frequency").rename_axis(None, axis=1)
+	bws_df   = bws_df.reset_index().pivot(index=["time"], columns="Formant",values="Bandwidth").rename_axis(None, axis=1)
+
+	#pitch descriptors
+	t_f0, f0s = Extract_ts_of_pitch_praat(file, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling)
+
+	#compute mean centroid
+	t_cent, centroids = get_spectral_centroid(file, window_size = sc_ws, noverlap = 0, plot_specgram = False)
+
+	#RMS
+	t_rms, rmss = get_RMS_over_time(file, window_size = rms_ws)
+
+	# Create time series talking vs not talking	
+	t_talking, talking_vals =get_talking_ts(file, threshold=silence_threshold, time_step=time_step)
+
+	#Harmonicity
+	t_harm, harms = get_harmonicity_ts(file, time_step)
+
+	duration = get_sound_duration(file)
+	time_vals = np.arange(0, duration, time_step)
+
+	df = pd.DataFrame(index=time_vals)
+
+	for formant in range(1, nb_formants+1):
+		df["F"+str(formant)+"_freq"] = np.interp(time_vals, freqs_df.index.values, freqs_df["F"+str(formant)])
+		df["F"+str(formant)+"_bw"]   = np.interp(time_vals, bws_df.index.values, bws_df["F"+str(formant)])
+
+	df["f0"] = np.interp(time_vals, t_f0, f0s)
+	df["centroid"] = np.interp(time_vals, t_cent, centroids)
+	df["rms"] = np.interp(time_vals, t_rms, rmss)
+	df["talking"] = np.interp(time_vals, t_talking, talking_vals)
+	df["harmonicity"] = np.interp(time_vals, t_harm, harms)
+
+	#Other info
+	df["file_tag"] = [file_tag for i in range(len(df))]
+
+	#append df to general dataframe
+	df.to_csv(target_folder + file_tag + ".csv")
+
+	#Plot features
+	if plot_features:
+		import matplotlib.pyplot as plt
+
+		fig, axes = plt.subplots(nrows=5, figsize=(20,15), sharex=True)
+
+		axes[0].plot(df["f0"].values, label='f0s')
+		axes[1].plot(df["rms"].values, label='rms')
+		axes[2].plot(df["talking"].values, label='talking')
+		axes[3].plot(df["harmonicity"].values, label='harmonicity')
+		axes[4].plot(df["centroid"].values, label='centroid')
+
+		# Add titles to each subplot
+		axes[0].set_title('f0s')
+		axes[1].set_title('rms')
+		axes[2].set_title('talking')
+		axes[3].set_title('harmonicity')
+		axes[4].set_title('centroid')
+
+		# Add labels and legend to the last subplot
+		axes[-1].set_xlabel('Time')
+		axes[-1].set_ylabel('Values')
+		axes[-1].legend()
+
+		# Adjust layout
+		plt.tight_layout()
+
+		#Save plot
+		plt.savefig(target_folder + file_tag + ".pdf")
+
+# analyse_audio_file_ts_folder_parallel
+def analyse_audio_ts_folder(source_folder  
+							, time_step				= 0.001
+							, praat_ws			    = 0.01 
+							, sc_ws                 = 512
+							, rms_ws                = 512
+							, pitch_floor			= 75
+							, pitch_ceiling			= 350
+							, nb_formants			= 6
+							, max_formant_freq		= 5500
+							, pre_emph				= 50.0
+							, parameter_tag         = None
+							, print_transformed_file = False
+							, silence_threshold      = -50
+							, target_folder			 = "audio_analysis/"
+							, plot_features          = True
+							):
+	"""
+	Extract Time series of features in parallel CPU cores
+	Check analyse_audio_file_ts for details
+	"""
+	import multiprocessing
+	from itertools import repeat	
+	#Create target forlder recursively if needed
+	os.makedirs(target_folder, exist_ok=True)
+
+	pool_obj = multiprocessing.Pool()
+	files     = glob.glob(source_folder)
+	pool_obj.starmap(analyse_audio_file_ts, zip(files
+										, repeat(time_step)				
+										, repeat(praat_ws)			    
+										, repeat(sc_ws)                
+										, repeat(rms_ws)          
+										, repeat(pitch_floor)		
+										, repeat(pitch_ceiling)			
+										, repeat(nb_formants)	
+										, repeat(max_formant_freq)		
+										, repeat(pre_emph)		
+										, repeat(parameter_tag)
+										, repeat(print_transformed_file) 
+										, repeat(silence_threshold)      
+										, repeat(target_folder)
+										, repeat(plot_features)
+										)
+					)
