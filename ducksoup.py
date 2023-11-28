@@ -125,13 +125,14 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
         print()
         return
     
-    files = glob.glob(source_folder+"*"+ extension)
+    dry_files = glob.glob(source_folder+"*dry"+ extension)
+    wet_files = glob.glob(source_folder+"*wet"+ extension)
     
     if not os.path.isdir(target_folder + combined_path):
         os.mkdir(target_folder+ combined_path)
     
     output = target_folder+combined_path + combined_video_name + extension
-    combine_videos( tl = files[0], tr = files[1], bl = files[2], br = files[3], output= output)
+    combine_videos( tl = dry_files[0], tr = wet_files[1], bl = dry_files[0], br = wet_files[1], output= output)
 
     #extract and combine audios
     if combine_audio_flag:

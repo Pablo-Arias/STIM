@@ -1605,12 +1605,11 @@ def analyse_audio_file(file
 	#compute mean centroid
 	centroid = get_mean_spectral_centroid_when_sound(file, RMS_threshold = sc_rms_thresh, window_size = sc_ws)
 
-	#RMS related features
-	#TODO : Add RMS related features if needed
+	#RMS related features : 
 	#silence_level            = get_silence_level(file, window_size_silence_level=window_size_silence_level)
 	#mean_rms                 = get_mean_rms_level_when_sound(rms_threshold= rms_threshold, window_size= window_size_rms)
 	#mean_rms_when_sound      = get_mean_rms_level_when_sound(rms_threshold= rms_threshold, window_size= window_size_rms)
-	#TODO : Add time speaking
+	#TODO : Add time talking
 
 	#create dictionary with values and then append to general dataframe
 	aux_df = pd.DataFrame()
