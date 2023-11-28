@@ -132,7 +132,7 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
         os.mkdir(target_folder+ combined_path)
     
     output = target_folder+combined_path + combined_video_name + extension
-    combine_videos( tl = dry_files[0], tr = wet_files[1], bl = dry_files[0], br = wet_files[1], output= output)
+    combine_videos( tl = dry_files[0], tr = wet_files[0], bl = dry_files[1], br = wet_files[1], output= output)
 
     #extract and combine audios
     if combine_audio_flag:
@@ -141,6 +141,7 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
             os.mkdir(target_folder + combined_with_audio_path)
 
         audios = []
+        files = dry_files + wet_files
         for cpt1, file in enumerate(files):
             audio_name = str(cpt1) + str(uuid.uuid1()) +"____.wav"
             extract_audio(file, audio_name)
