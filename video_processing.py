@@ -545,7 +545,7 @@ def combine_2_videos(left, right, output, combine_audio_flag=True):
 		os.remove(audio_1)
 		os.remove(audio_2)
 
-def combine_videos( tl, tr, bl, br,output, audios = [] ):
+def combine_videos( tl, tr, bl, br, output, audios = [] ):
 	"""
 		Create a movie with 4 movies!
 		tl : top left; tr : top right, bl : bottom left; br : bottom_right

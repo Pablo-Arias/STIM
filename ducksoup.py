@@ -8,6 +8,26 @@ import datetime
 #Macros to parse DuckSoup name, change this to correspondent position if needed
 date_position_in_file_name = 3
 hour_position_in_file_name = 4
+player_position_in_file_name = -4
+dyad_position_in_file_name = -6
+
+
+#Parse FILE NAMES
+def get_player(file):
+    file_tag = get_file_without_path(file)
+    return file_tag.split("-")[player_position_in_file_name]
+
+def get_dyad(file):
+    file_tag = get_file_without_path(file)
+    return file_tag.split("-")[dyad_position_in_file_name]
+
+def get_date(file):
+    file_tag = get_file_without_path(file)
+    return file_tag.split("-")[date_position_in_file_name]
+
+def get_hour(file_tag):
+    return file_tag.split("-")[hour_position_in_file_name]
+
 
 ##-- trim_folder
 def trim_folder(source_folder, folder_tag, target_folder, trimed_path, extension=".mp4", verbose=True):
@@ -125,14 +145,24 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
         print()
         return
     
-    dry_files = glob.glob(source_folder+"*dry"+ extension)
-    wet_files = glob.glob(source_folder+"*wet"+ extension)
+    #Get organised files in the order (dry, wet, dry wet)
+    files = glob.glob(source_folder + "*"+ extension)
+    players = []
+    for file in files:
+        players.append(get_player(file))
+    players = np.unique(players)
+    dyad = get_dyad(file)
+    manipulations = ("dry", "wet")
+    organised_files = []
+    for player in players:
+        for manipulation in manipulations:
+            organised_files.append(glob.glob(source_folder+"*"+dyad+"*"+player+"*"+manipulation+ extension)[0])
     
     if not os.path.isdir(target_folder + combined_path):
         os.mkdir(target_folder+ combined_path)
     
     output = target_folder+combined_path + combined_video_name + extension
-    combine_videos( tl = dry_files[0], tr = wet_files[0], bl = dry_files[1], br = wet_files[1], output= output)
+    combine_videos( tl = organised_files[0], tr = organised_files[1], bl = organised_files[2], br = organised_files[3], output= output)
 
     #extract and combine audios
     if combine_audio_flag:
@@ -141,7 +171,7 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
             os.mkdir(target_folder + combined_with_audio_path)
 
         audios = []
-        files = dry_files + wet_files
+        files = glob.glob(source_folder + "*"+ extension)
         for cpt1, file in enumerate(files):
             audio_name = str(cpt1) + str(uuid.uuid1()) +"____.wav"
             extract_audio(file, audio_name)
