@@ -111,11 +111,8 @@ def change_fps_folder(source_folder, folder_tag, target_folder, change_fps_path=
         print("Changing FPS of videos with ffmpeg...")
         print()
 
-    if not os.path.isdir(target_folder + change_fps_path):
-        try:
-            os.mkdir(target_folder + change_fps_path)
-        except:
-            pass            
+    if not os.path.isdir(target_folder + change_fps_path):        
+        os.makedirs(target_folder + change_fps_path, exist_ok=True)
 
     for file in glob.glob(source_folder +"*" + extension):
         if verbose:

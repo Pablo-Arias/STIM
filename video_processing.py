@@ -645,7 +645,7 @@ def extract_frames_video(source, folder, tag="", fps=25, extension=".bmp", quali
 	import subprocess
 	import os
 
-	os.mkdir(folder)
+	os.makedirs(folder, exist_ok=True)
 
 	command = "ffmpeg -i "+source+" -r "+str(fps)+" "+folder+tag+"$filename%01d"+extension +" -q:v "+str(quality) +" -qmin "+ str(1)
 	subprocess.call(command, shell=True)
@@ -715,10 +715,7 @@ def index_video_recording(source, rms_threshold = -50, WndSize = 16384, target_f
 
 
 def index_video_recordings_parallel(sources, rms_threshold = -50, WndSize = 16384, indexed_path="extracted_audio/", add_time_tag=False):
-    try:
-        os.mkdir(indexed_path)
-    except:
-        pass    
+    os.makedirs(indexed_path, exist_ok=True) 
     
     import multiprocessing
     from itertools import repeat
