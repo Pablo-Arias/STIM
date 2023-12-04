@@ -482,6 +482,8 @@ def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, 
 
 	command = "ffmpeg -framerate "+str(fps)+" -pattern_type glob -i \'"+frame_name_tag+"*"+img_extension+"\' -c:v libx264 -pix_fmt yuv420p -acodec copy -preset "+preset+" "+target_video
 
+	command = "ffmpeg -framerate "+str(fps)+" -y -i \'"+frame_name_tag+"%d"+img_extension+"\' -vcodec mpeg4 -q:v 1 -preset "+preset+" "+target_video
+
 	print(command)
 
 	subprocess.call(command, shell=True)	
