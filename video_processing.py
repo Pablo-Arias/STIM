@@ -56,10 +56,8 @@ def extract_audio_folder(source, target_folder= "analysis_file/", nb_audio_chann
 	import glob
 
 	os.makedirs(target_folder, exist_ok=True)
-	cpt=0
+
 	for file in glob.glob(source):
-		print(cpt)
-		cpt+=1
 		file_tag = get_file_without_path(file)
 		target_file = target_folder + file_tag + ".wav"
 		extract_audio(video_file = file, target_name = target_file, nb_audio_channels=nb_audio_channels)

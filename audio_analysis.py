@@ -335,13 +335,15 @@ def get_harmonicity_ts(file, time_step, normalise=True):
 	"""
 	Use Parselmouth to extract harmonicity of file
 	"""
+	import numpy as np
+
+	#Extract harmonicity with parselmouth
 	harmonicity = parselmouth.Sound(file).to_harmonicity()
 	duration = get_sound_duration(file)
 	harm_time = np.arange(0, duration, time_step)
 	harm_vals = [harmonicity.get_value(i) for i in harm_time]
 
 	if normalise:
-		import numpy as np
 
 		#Normalise between 0 and 1
 		for cpt in range(len(harm_vals)):
@@ -1513,7 +1515,7 @@ def analyse_audio_file(file
 						, sc_rms_thresh         = -60
 						, sc_ws                 = 512
 						, parameter_tag         = None
-						, print_transformed_file = False
+						, verbose = False
 						, formant_method		 = 'mean'
 						, target_folder			 = "audio_analysis/"
 						):
@@ -1535,7 +1537,7 @@ def analyse_audio_file(file
 		print("Analysis for file "+ analysis_file +" exists, skipping ")
 	
 
-	if print_transformed_file:
+	if verbose:
 		print("Starting analysis for file : " + file)
 
 	#Handle updated parameter tags
@@ -1664,7 +1666,7 @@ def analyse_audio_folder(source_folder
 						, sc_rms_thresh         = -60
 						, sc_ws                 = 512
 						, parameter_tag         = None
-						, print_transformed_file = False
+						, verbose = False
 						, formant_method		 = 'mean'
 						, target_folder			 = "audio_analysis/"
 						):
@@ -1690,7 +1692,7 @@ def analyse_audio_folder(source_folder
 									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
 									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':4900} })
 
-		print_transformed_file: for debuging purposes, put this to True to print each analysed file
+		verbose: for debuging purposes, put this to True to print each analysed file
 		formant_method   	  : the method to use to colapse formants. Either 'mean' or 'median'.
 
 	Output:
@@ -1718,7 +1720,7 @@ def analyse_audio_folder(source_folder
 						, sc_rms_thresh         = sc_rms_thresh
 						, sc_ws                 = sc_ws
 						, parameter_tag         = parameter_tag
-						, print_transformed_file = print_transformed_file
+						, verbose = verbose
 						, formant_method		 = formant_method
 						, target_folder			 = target_folder
 						)
@@ -1738,7 +1740,7 @@ def analyse_audio_folder_parallel(source_folder
 						, sc_rms_thresh         = -60
 						, sc_ws                 = 512
 						, parameter_tag         = None
-						, print_transformed_file = False
+						, verbose               = False
 						, formant_method		 = 'mean'
 						, target_folder			 = "audio_analysis/"
 						):
@@ -1764,7 +1766,7 @@ def analyse_audio_folder_parallel(source_folder
 									Second, a dictionary with a dictionary with the corresponding parameters to use for each tag
 									For example (0, {F: {'max_formant_freq':5500} , M:{'max_formant_freq':4900} })
 
-		print_transformed_file: for debuging purposes, put this to True to print each analysed file
+		verbose: for debuging purposes, put this to True to print each analysed file
 		formant_method   	  : the method to use to colapse formants. Either 'mean' or 'median'.
 
 	Output:
@@ -1796,7 +1798,7 @@ def analyse_audio_folder_parallel(source_folder
 										, repeat(sc_rms_thresh)
 										, repeat(sc_ws)
 										, repeat(parameter_tag)
-										, repeat(print_transformed_file)
+										, repeat(verbose)
 										, repeat(formant_method)
 										, repeat(target_folder)
 										)
@@ -1814,7 +1816,7 @@ def analyse_audio_file_ts(file
 						, max_formant_freq		= 5500
 						, pre_emph				= 50.0
 						, parameter_tag         = None
-						, print_transformed_file = False
+						, verbose               = False
 						, silence_threshold      = -50
 						, target_folder			 = "audio_analysis/"
 						, plot_features          = False
@@ -1838,7 +1840,7 @@ def analyse_audio_file_ts(file
 		print("Analysis for file "+ analysis_file +" exists, skipping ")
 		return
 
-	if print_transformed_file:
+	if verbose:
 		print("Starting analysis for file : " + file)
 
 	#Handle updated parameter tags
@@ -1861,6 +1863,8 @@ def analyse_audio_file_ts(file
 
 
 	#Get formant frequencies
+	if verbose:
+		print("start formant analysis")
 	freqs_df, bws_df =	get_formant_ts_praat(file
 											, time_step=time_step
 											, window_size=praat_ws
@@ -1873,18 +1877,28 @@ def analyse_audio_file_ts(file
 	bws_df   = bws_df.reset_index().pivot(index=["time"], columns="Formant",values="Bandwidth").rename_axis(None, axis=1)
 
 	#pitch descriptors
+	if verbose:
+		print("start fundamental freq analysis")
 	t_f0, f0s = Extract_ts_of_pitch_praat(file, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling)
 
 	#compute mean centroid
+	if verbose:
+		print("Start spectral centroid")
 	t_cent, centroids = get_spectral_centroid(file, window_size = sc_ws, noverlap = 0, plot_specgram = False)
 
 	#RMS
+	if verbose:
+		print("Start RMS analysis")
 	t_rms, rmss = get_RMS_over_time(file, window_size = rms_ws)
 
 	# Create time series talking vs not talking	
+	if verbose:
+		print("Start talking TS")
 	t_talking, talking_vals =get_talking_ts(file, threshold=silence_threshold, time_step=time_step)
 
 	#Harmonicity
+	if verbose:
+		print("Start harmonicity")
 	t_harm, harms = get_harmonicity_ts(file, time_step)
 
 	duration = get_sound_duration(file)
@@ -1896,26 +1910,30 @@ def analyse_audio_file_ts(file
 		df["F"+str(formant)+"_freq"] = np.interp(time_vals, freqs_df.index.values, freqs_df["F"+str(formant)])
 		df["F"+str(formant)+"_bw"]   = np.interp(time_vals, bws_df.index.values, bws_df["F"+str(formant)])
 
-	df["f0"] = np.interp(time_vals, t_f0, f0s)
-	df["centroid"] = np.interp(time_vals, t_cent, centroids)
-	df["rms"] = np.interp(time_vals, t_rms, rmss)
-	df["talking"] = np.interp(time_vals, t_talking, talking_vals)
+	df["f0"]          = np.interp(time_vals, t_f0, f0s)
+	df["centroid"]    = np.interp(time_vals, t_cent, centroids)
+	df["rms"]         = np.interp(time_vals, t_rms, rmss)
+	df["talking"]     = np.interp(time_vals, t_talking, talking_vals)
 	df["harmonicity"] = np.interp(time_vals, t_harm, harms)
 
 	#Other info
 	df["file_tag"] = [file_tag for i in range(len(df))]
 
-	#append df to general dataframe
-	df.to_csv(target_folder + file_tag + ".csv")
+	#Save analyses to dataframe
+	if verbose:
+		print("--- Saving results ---")
+		print(df)
+	df.to_csv(analysis_file)
 
 	#Plot features
 	if plot_features:
 		import matplotlib.pyplot as plt
 
-		fig, axes = plt.subplots(nrows=5, figsize=(20,15), sharex=True)
+		fig, axes = plt.subplots(nrows=6, figsize=(23,15), sharex=True)
 
 		for formant in range(1, nb_formants+1):
 			axes[0].plot(df["F"+str(formant)].values, label="F"+str(formant))
+
 		axes[1].plot(df["f0"].values, label='f0s')
 		axes[2].plot(df["rms"].values, label='rms')
 		axes[3].plot(df["talking"].values, label='talking')
@@ -1953,7 +1971,7 @@ def analyse_audio_ts_folder(source_folder
 							, max_formant_freq		= 5500
 							, pre_emph				= 50.0
 							, parameter_tag         = None
-							, print_transformed_file = False
+							, verbose = False
 							, silence_threshold      = -50
 							, target_folder			 = "audio_analysis/"
 							, plot_features          = True
@@ -1967,6 +1985,7 @@ def analyse_audio_ts_folder(source_folder
 	#Create target forlder recursively if needed
 	os.makedirs(target_folder, exist_ok=True)
 
+	print("Start of analyse_audio_ts_folder")
 	pool_obj = multiprocessing.Pool()
 	files     = glob.glob(source_folder)
 	pool_obj.starmap(analyse_audio_file_ts, zip(files
@@ -1980,7 +1999,7 @@ def analyse_audio_ts_folder(source_folder
 										, repeat(max_formant_freq)		
 										, repeat(pre_emph)		
 										, repeat(parameter_tag)
-										, repeat(print_transformed_file) 
+										, repeat(verbose) 
 										, repeat(silence_threshold)      
 										, repeat(target_folder)
 										, repeat(plot_features)
