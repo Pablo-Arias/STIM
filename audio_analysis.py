@@ -1932,7 +1932,7 @@ def analyse_audio_file_ts(file
 		fig, axes = plt.subplots(nrows=6, figsize=(23,15), sharex=True)
 
 		for formant in range(1, nb_formants+1):
-			axes[0].plot(df["F"+str(formant)].values, label="F"+str(formant))
+			axes[0].plot(df["F"+str(formant)+"_freq"].values, label="F"+str(formant))
 
 		axes[1].plot(df["f0"].values, label='f0s')
 		axes[2].plot(df["rms"].values, label='rms')
