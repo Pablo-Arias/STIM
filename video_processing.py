@@ -21,7 +21,7 @@ import glob
 from conversions import get_file_without_path
 from transform_audio import index_wav_file
 
-def extract_audio(video_file, target_name):
+def extract_audio(video_file, target_name, nb_audio_channels=1):
 	"""
 	parameters:
 		video_file : file to extract wav from
@@ -35,18 +35,13 @@ def extract_audio(video_file, target_name):
 		os.remove(target_name)
 	except:
 		pass
-
-	base = os.path.basename(video_file)
-	file_name = os.path.splitext(base)[0]
-	path = os.path.dirname(os.path.realpath(video_file))
-
-
-	command = "ffmpeg -i "+video_file+" -ab 160k -ac 2 -ar 44100 -vn "+ target_name
+	
+	command = "ffmpeg -i "+video_file+" -ab 160k -ac "+str(nb_audio_channels)+" -ar 44100 -vn "+ target_name
 	subprocess.call(command, shell=True)
 
 	return target_name
 
-def extract_audio_folder(source, target_folder= "analysis_file/", to_mono=False):
+def extract_audio_folder(source, target_folder= "analysis_file/", nb_audio_channels=1):
 	"""
 	Extracts the audio of a folder with videos.
 	Source should be in glob.glob style
@@ -60,17 +55,14 @@ def extract_audio_folder(source, target_folder= "analysis_file/", to_mono=False)
 	from transform_audio import wav_to_mono
 	import glob
 
-	try:
-		os.mkdir(target_folder)
-	except:
-		pass
-
+	os.makedirs(target_folder, exist_ok=True)
+	cpt=0
 	for file in glob.glob(source):
+		print(cpt)
+		cpt+=1
 		file_tag = get_file_without_path(file)
 		target_file = target_folder + file_tag + ".wav"
-		extract_audio(file, target_file)
-		if to_mono:
-			wav_to_mono(target_file, target_file)
+		extract_audio(video_file = file, target_name = target_file, nb_audio_channels=nb_audio_channels)
 
 def replace_audio(video_file, new_audio, target_video):
 	"""

@@ -1914,18 +1914,21 @@ def analyse_audio_file_ts(file
 
 		fig, axes = plt.subplots(nrows=5, figsize=(20,15), sharex=True)
 
-		axes[0].plot(df["f0"].values, label='f0s')
-		axes[1].plot(df["rms"].values, label='rms')
-		axes[2].plot(df["talking"].values, label='talking')
-		axes[3].plot(df["harmonicity"].values, label='harmonicity')
-		axes[4].plot(df["centroid"].values, label='centroid')
+		for formant in range(1, nb_formants+1):
+			axes[0].plot(df["F"+str(formant)].values, label="F"+str(formant))
+		axes[1].plot(df["f0"].values, label='f0s')
+		axes[2].plot(df["rms"].values, label='rms')
+		axes[3].plot(df["talking"].values, label='talking')
+		axes[4].plot(df["harmonicity"].values, label='harmonicity')
+		axes[5].plot(df["centroid"].values, label='centroid')
 
 		# Add titles to each subplot
-		axes[0].set_title('f0s')
-		axes[1].set_title('rms')
-		axes[2].set_title('talking')
-		axes[3].set_title('harmonicity')
-		axes[4].set_title('centroid')
+		axes[0].set_title('Formants')
+		axes[1].set_title('f0s')
+		axes[2].set_title('rms')
+		axes[3].set_title('talking')
+		axes[4].set_title('harmonicity')
+		axes[5].set_title('centroid')
 
 		# Add labels and legend to the last subplot
 		axes[-1].set_xlabel('Time')
