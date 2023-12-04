@@ -14,7 +14,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
-from transform_audio import extract_sentences_tags
 import cv2
 from datetime import datetime
 import os
@@ -181,6 +180,8 @@ def extract_sentences_in_video(source_name, target_folder, rms_threshold = -50, 
 		WndSize :
 		overlap :
 	"""	
+	from transform_audio import extract_sentences_tags
+	
 	import os
 	
 	audio_name = "auxiliary_audio_file_14357XXX.wav"
