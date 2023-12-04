@@ -1841,7 +1841,7 @@ def analyse_audio_file_ts(file
 		return
 
 	if verbose:
-		print("Starting analysis for file : " + file)
+		print("Starting analysis for file : " + file, flush=True)
 
 	#Handle updated parameter tags
 	if parameter_tag:
@@ -1864,7 +1864,7 @@ def analyse_audio_file_ts(file
 
 	#Get formant frequencies
 	if verbose:
-		print("start formant analysis")
+		print("start formant analysis", flush=True)
 	freqs_df, bws_df =	get_formant_ts_praat(file
 											, time_step=time_step
 											, window_size=praat_ws
@@ -1878,27 +1878,27 @@ def analyse_audio_file_ts(file
 
 	#pitch descriptors
 	if verbose:
-		print("start fundamental freq analysis")
+		print("start fundamental freq analysis", flush=True)
 	t_f0, f0s = Extract_ts_of_pitch_praat(file, time_step=time_step , pitch_floor = pitch_floor, pitch_ceiling =  pitch_ceiling)
 
 	#compute mean centroid
 	if verbose:
-		print("Start spectral centroid")
+		print("Start spectral centroid", flush=True)
 	t_cent, centroids = get_spectral_centroid(file, window_size = sc_ws, noverlap = 0, plot_specgram = False)
 
 	#RMS
 	if verbose:
-		print("Start RMS analysis")
+		print("Start RMS analysis", flush=True)
 	t_rms, rmss = get_RMS_over_time(file, window_size = rms_ws)
 
 	# Create time series talking vs not talking	
 	if verbose:
-		print("Start talking TS")
+		print("Start talking TS", flush=True)
 	t_talking, talking_vals =get_talking_ts(file, threshold=silence_threshold, time_step=time_step)
 
 	#Harmonicity
 	if verbose:
-		print("Start harmonicity")
+		print("Start harmonicity", flush=True)
 	t_harm, harms = get_harmonicity_ts(file, time_step)
 
 	duration = get_sound_duration(file)
@@ -1921,8 +1921,8 @@ def analyse_audio_file_ts(file
 
 	#Save analyses to dataframe
 	if verbose:
-		print("--- Saving results ---")
-		print(df)
+		print("--- Saving results ---", flush=True)
+		print(df, flush=True)
 	df.to_csv(analysis_file)
 
 	#Plot features
@@ -1985,7 +1985,7 @@ def analyse_audio_ts_folder(source_folder
 	#Create target forlder recursively if needed
 	os.makedirs(target_folder, exist_ok=True)
 
-	print("Start of analyse_audio_ts_folder")
+	print("Start of analyse_audio_ts_folder", flush=True)
 	pool_obj = multiprocessing.Pool()
 	files     = glob.glob(source_folder)
 	pool_obj.starmap(analyse_audio_file_ts, zip(files
