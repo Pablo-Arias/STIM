@@ -480,7 +480,7 @@ def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, 
 	#command = "ffmpeg -framerate "+str(fps)+" -i "+frame_name_tag+"%d"+img_extension+" -vcodec "+video_codec+" -acodec copy -preset ultrafast "+target_video
 	#command = "ffmpeg -framerate "+str(fps)+" -i "+frame_name_tag+"%d"+img_extension+" -vcodec "+video_codec+" -acodec copy -preset "+preset+" -x265-params lossless="+str(loseless)+" "+target_video
 
-	command = "ffmpeg -framerate "+str(fps)+" -pattern_type glob -i "+frame_name_tag+"%d"+img_extension+" -c:v libx264 -pix_fmt yuv420p -acodec copy -preset "+preset+" "+target_video
+	command = "ffmpeg -framerate "+str(fps)+" -pattern_type glob -i \'"+frame_name_tag+"*"+img_extension+"\' -c:v libx264 -pix_fmt yuv420p -acodec copy -preset "+preset+" "+target_video
 
 	print(command)
 
