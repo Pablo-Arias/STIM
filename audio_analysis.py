@@ -259,15 +259,15 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 		f0s   = [float(x) for x in f0s]
 		
 		from bisect import bisect_left
-		f0_times, f0_harm, _ = get_f0(audio_file = Fname)
+		harm_time, harm_vals = get_harmonicity_ts(audio_file, time_step=time_step, normalise=True)
 
 		cleaned_vals  = []
 		cleaned_times = []
 		for index, time in enumerate(times):
-			idx_harm = bisect_left(f0_times, time)
+			idx_harm = bisect_left(harm_time, time)
 
 			
-			if harmonicity_threshold < f0_harm[idx_harm-1]:
+			if harmonicity_threshold < harm_vals[idx_harm-1]:
 				cleaned_vals.append(f0s[index])
 				cleaned_times.append(time)
 
