@@ -458,7 +458,7 @@ def color_correction(source_video, target_video, gamma=1.5, saturation =1.3):
 	command = "ffmpeg -i " + source_video + " -vf eq=gamma="+str(1.5)+":saturation="+str(saturation)+" -c:a copy "+ target_video
 	subprocess.call(command, shell=True)
 
-def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, preset="ultrafast"):
+def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, preset="ultrafast", audio_file=None):
 	"""
 	Create a movie with a series of frames
 	frame_name_tag : if your frames are named frame_001.png, frame_name_tag="frame_"
@@ -466,23 +466,22 @@ def create_movie_from_frames(frame_name_tag, fps, img_extension , target_video, 
 	video_codec : specifiy the video copy flag to pass to ffmpeg. 
 
 	Possiblities:
-		"copy" : will copy frames, videos will be very big, but generation will bef ast
-		"libx265" : generation will be slow but videos will be small
 		"preset" : The default is medium. The preset determines compression efficiency and therefore affects encoding speed. 
 				   options: superfast, veryfast, faster, fast, medium, slow, slower, veryslow, and placebo. 
 				   Use the slowest preset you have patience for. Ignore placebo as it provides insignificant returns for a significant increase in encoding time.
-		"loseless" : 1 : losseless encoding; 0 : loss encoding
 
  	"""
 	import subprocess
 	import os
 	
+	# OLD Commands
 	#command = "ffmpeg -framerate "+str(fps)+" -i "+frame_name_tag+"%d"+img_extension+" -vcodec "+video_codec+" -acodec copy -preset ultrafast "+target_video
 	#command = "ffmpeg -framerate "+str(fps)+" -i "+frame_name_tag+"%d"+img_extension+" -vcodec "+video_codec+" -acodec copy -preset "+preset+" -x265-params lossless="+str(loseless)+" "+target_video
-
-	command = "ffmpeg -framerate "+str(fps)+" -pattern_type glob -i \'"+frame_name_tag+"*"+img_extension+"\' -c:v libx264 -pix_fmt yuv420p -acodec copy -preset "+preset+" "+target_video
-
-	command = "ffmpeg -framerate "+str(fps)+" -y -i \'"+frame_name_tag+"%d"+img_extension+"\' -vcodec mpeg4 -q:v 1 -preset "+preset+" "+target_video
+	#command = "ffmpeg -framerate "+str(fps)+" -pattern_type glob -i \'"+frame_name_tag+"*"+img_extension+"\' -c:v libx264 -pix_fmt yuv420p -acodec copy -preset "+preset+" "+target_video
+	if audio_file:
+		command = "ffmpeg -framerate "+str(fps)+" -y -i \'"+frame_name_tag+"%d"+img_extension+"\' -i "+audio_file+" -vcodec mpeg4 -q:v 1 -preset "+preset+" "+target_video
+	else:
+		command = "ffmpeg -framerate "+str(fps)+" -y -i \'"+frame_name_tag+"%d"+img_extension+"\' -vcodec mpeg4 -q:v 1 -preset "+preset+" "+target_video
 
 	print(command)
 
