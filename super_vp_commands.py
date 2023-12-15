@@ -36,7 +36,9 @@ def generate_f0_analysis(audio_file, analysis ="", f_min =80, f_max=1500, F=3000
 		analysis = os.path.join(os.path.dirname(audio_file), file_tag + ".sdif")
 
 	# parameters  = "-t -ns  -S"+audio_file+" -Af0 \"fm100, fM1500, F3000, sn120, smooth3 ,Cdem, M0.26 , E0.14\" -Np2 -M0.0464299991726875s -oversamp 8 -Wblackman  -Of4 " + analysis
+	
 	parameters  = "-t -ns  -S"+audio_file+" -Af0 \"fm"+str(f_min)+", fM"+str(f_max)+", F"+str(F)+", sn120, smooth3 ,Cdem, M0.26 , E0.14\" -Np2 -M0.0464299991726875s -oversamp 8 -Wblackman  -Of4 " + analysis
+
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)
@@ -245,23 +247,67 @@ def generate_fft_analysis(audio_file, analysis = "", wait = True):
 
 
 # ---------- transpose_sound
-def transpose_sound(source_sound, nb_cents, target_sound, wait = True, window_size=512, fft_size=25, win_oversampling = 64, fft_oversampling=2, use_spec_env = True):
+def transpose_sound(source_sound, nb_cents
+					, target_sound
+					, window_size=512
+					, fft_size=25
+					, win_oversampling=64
+					, fft_oversampling=2
+					, print_command_line=False
+					, preserve_spectral_envelope=True
+					, perserve_transient=True 
+					, verbose=False
+					, low_pass_filter_freq=None
+					, wait = True
+					):
 	"""
 	transpose source sound from number of cents and generate target_sound
 
 	source_sound: audio source file
 	target_sound: audio file to be created
 	nb_cents : number of cents
+	
+	Check super vp help to see how each of these work more in depth
 	"""	
 
+	#Select tags
+	#preserve spectral envelope
+	if preserve_spectral_envelope:
+		transp_type = " -transke " # preserve spectral envelope
+	else:
+		transp_type = " -trans " # don't preserve
+	
+	#verbose baby
+	if verbose:
+		verbose_flag= " -v "
+	else:
+		verbose_flag= ""
+
+	#transient preservation infomration
+	# With argument "0"  phase synchronization  is switched on.   The argument
+	# "1" enables  transient detection  and preservation.  -P  applies to
+	# the first track and -p to the second track.
+	# Transient preservation localizes transients peaks in time/frequency
+	# domain  and re-initializes phases  for the  related bins  after the
+	# transient  has  passed  in order  to  keep  the  wave form  of  the
+	# transient.
+	if perserve_transient:
+		transient = " -P1 "
+	else:
+		transient =""
+		
+	if low_pass_filter_freq != None:
+		low_pass_tag = " -tr_filt "+str(low_pass_filter_freq) + " "
+	else:
+		low_pass_tag=""	
+
 	window_size      = str(window_size)
-	fft_size        = str(fft_size)
+	fft_size         = str(fft_size)
 	fft_oversampling = str(int(fft_oversampling))
 	win_oversampling = str(win_oversampling)
-	if use_spec_env:
-		parameters =  "-t -Afft "+fft_size+" -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
-	else:
-		parameters =  "-t "+ "-M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -trans "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
+
+
+	parameters =  "-t -Afft "+ fft_size+ " -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z"+transp_type+str(nb_cents)+ verbose_flag+transient+low_pass_tag +"-S"+ source_sound+ " " + target_sound
 
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
@@ -269,9 +315,26 @@ def transpose_sound(source_sound, nb_cents, target_sound, wait = True, window_si
 
 	if wait:
 		p.wait() #wait
+	
+	if print_command_line:
+		print("supervp parameters used are : " + parameters)
 
 # -----------
-def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, wait = True, window_size=2048, fft_size=4096, win_oversampling = 64, fft_oversampling=2, use_spec_env=True ):
+def dynamic_f0_transposition(times
+							, transpositions
+							, source_sound
+							, target_sound
+							, window_size=1024
+							, fft_size=512
+							, win_oversampling=64
+							, fft_oversampling=2
+							, print_command_line=False
+							, preserve_spectral_envelope=True
+							, perserve_transient=True 
+							, verbose=False
+							, low_pass_filter_freq=None
+							, wait = True
+							):
 	"""
 		Use super vp to do a dynamic f0 transposition
 		times : array with times where to apply the transposition in seconds
@@ -279,7 +342,6 @@ def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, 
 		source_sound : input file
 		target_sound : output file to be created
 		Other parameters are super vp parameters
-
 	"""
 	string_length = 16
 	pitch_txt = ''.join(random.choice(string.ascii_lowercase[:6]) for _ in range(string_length))
@@ -289,15 +351,19 @@ def dynamic_f0_transposition(times, transpositions, source_sound, target_sound, 
 		combined_elements = ''.join(combined_elements)
 		file.writelines(combined_elements+ "\n")
 
-	transpose_sound(source_sound       = source_sound
-				, nb_cents         = pitch_txt
-				, target_sound     = target_sound
-				, wait             = wait
-				, window_size      = window_size
-				, fft_size         = fft_size
-				, win_oversampling = win_oversampling
-				, fft_oversampling = fft_oversampling
-				, use_spec_env = use_spec_env
+	transpose_sound(source_sound   = source_sound
+				    , nb_cents     = pitch_txt
+					, target_sound = target_sound
+					, wait         = wait
+					, window_size=window_size
+					, fft_size=fft_size
+					, win_oversampling=win_oversampling
+					, fft_oversampling=fft_oversampling
+					, print_command_line=print_command_line
+					, preserve_spectral_envelope=preserve_spectral_envelope
+					, perserve_transient=perserve_transient
+					, verbose=verbose
+					, low_pass_filter_freq=low_pass_filter_freq
 			)
 	
 	os.remove(pitch_txt)
@@ -319,6 +385,7 @@ def env_transpose(source_sound, target_sound, nb_cents, wait = True, env_warp_ws
 	win_oversampling = str(win_oversampling)
 
 	parameters =  "-t -Afft "+lpc_order+" -M"+env_warp_ws+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z -transenv "+str(nb_cents)+" -S"+ source_sound+ " " + target_sound
+
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
 	p 			= subprocess.Popen(args)

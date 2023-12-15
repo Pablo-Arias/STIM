@@ -219,7 +219,19 @@ def get_spectral_centroid_over_time(audio_file, window_size = 256, noverlap = 0,
 
 
 # Extract_ts_of_pitch_praat
-def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_ceiling =  350, harmonicity_threshold=None):
+def Extract_ts_of_pitch_praat(Fname
+							, time_step=0.001 
+							, pitch_floor = 75
+							, pitch_ceiling =  350
+							, max_nb_candidates=15
+							, accuracy = 0
+							, silence_threshold = 0.03
+							, voicing_threshold = 0.45
+							, octave_cost = 0.01
+							, octave_jump_cost = 0.35 
+							, voiced_unvoiced_cost = 0.14
+							, harmonicity_threshold = None
+							):
 	"""
 		Extract pitch time series using praat for the file Fname
 
@@ -228,7 +240,11 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 			time_step : time step to use for the analysis in seconds
 			pitch_floor : minimul pitch posible, in HZ
 			pitch_ceiling : maximum pitch posible, in HZ
+			accuracy : on or off
+		
+		See parameters here : https://www.fon.hum.uva.nl/praat/manual/Sound__To_Pitch__raw_ac____.html
 
+		Also, use harmonicity threshold (from 0 to 1) to clean pitch estimation values.
 		Return: times, f0
 
 	"""
@@ -239,7 +255,20 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 
 	#execture script with parselmouth
 	script = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'ts_pitch.praat')
-	_, out = parselmouth.praat.run_file(script, Fname, str(time_step), str(pitch_floor), str(pitch_ceiling), capture_output=True)
+	_, out = parselmouth.praat.run_file(script
+										, Fname
+										, str(time_step)
+										, str(pitch_floor)
+										, str(max_nb_candidates)
+										, str(accuracy)
+										, str(silence_threshold)
+										, str(voicing_threshold)
+										, str(octave_cost)
+										, str(octave_jump_cost)
+										, str(voiced_unvoiced_cost)
+										, str(pitch_ceiling)
+										, capture_output=True
+										)
 
 	#Parse script
 	out = out.splitlines()
@@ -259,7 +288,7 @@ def Extract_ts_of_pitch_praat(Fname, time_step=0.001 , pitch_floor = 75, pitch_c
 		f0s   = [float(x) for x in f0s]
 		
 		from bisect import bisect_left
-		harm_time, harm_vals = get_harmonicity_ts(audio_file, time_step=time_step, normalise=True)
+		harm_time, harm_vals = get_harmonicity_ts(Fname, time_step=time_step, normalise=True)
 
 		cleaned_vals  = []
 		cleaned_times = []
@@ -331,21 +360,24 @@ def get_pulse_features(sound, f0min=75, f0max=450, time_step=0.01, silence_thres
 	return pulses_df
 
 # get_harmonicity_ts
-def get_harmonicity_ts(file, time_step, normalise=True):
+def get_harmonicity_ts(file, time_step, min_pitch = 75, silence_threshold = 0.1, periods_per_window = 4.5, normalise=True):
 	"""
 	Use Parselmouth to extract harmonicity of file
+	See parameter explanation here : https://www.fon.hum.uva.nl/praat/manual/Sound__To_Harmonicity__ac____.html
 	"""
 	import numpy as np
+	import parselmouth
+	from parselmouth.praat import call
 
 	#Extract harmonicity with parselmouth
-	harmonicity = parselmouth.Sound(file).to_harmonicity()
-	duration = get_sound_duration(file)
+	sound = parselmouth.Sound(file)
+	harm_obj = call(sound, "To Harmonicity (cc)...", time_step, min_pitch, silence_threshold, periods_per_window)
+	duration = harm_obj.duration
 	harm_time = np.arange(0, duration, time_step)
-	harm_vals = [harmonicity.get_value(i) for i in harm_time]
+	harm_vals = [harm_obj.get_value(i) for i in harm_time]
 
 	if normalise:
-
-		#Normalise between 0 and 1
+		#Normalise between 0 and 1 using -200 as the lowest value
 		for cpt in range(len(harm_vals)):
 			if harm_vals[cpt] < -200:
 				harm_vals[cpt] = -200
@@ -353,7 +385,7 @@ def get_harmonicity_ts(file, time_step, normalise=True):
 				harm_vals[cpt] = 1
 
 		for cpt in range(len(harm_vals)):
-			harm_vals[cpt] = (harm_vals[cpt] + 200) / np.nanmax(harm_vals)
+			harm_vals[cpt] = (harm_vals[cpt] + 201) / 201
 
 	return harm_time, harm_vals
 
