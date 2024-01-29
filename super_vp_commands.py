@@ -250,7 +250,7 @@ def generate_fft_analysis(audio_file, analysis = "", wait = True):
 def transpose_sound(source_sound, nb_cents
 					, target_sound
 					, window_size=512
-					, fft_size=25
+					, fft_size=512
 					, win_oversampling=64
 					, fft_oversampling=2
 					, print_command_line=False
@@ -259,6 +259,7 @@ def transpose_sound(source_sound, nb_cents
 					, verbose=False
 					, low_pass_filter_freq=None
 					, wait = True
+					, loudness_norm=False
 					):
 	"""
 	transpose source sound from number of cents and generate target_sound
@@ -276,6 +277,11 @@ def transpose_sound(source_sound, nb_cents
 		transp_type = " -transke " # preserve spectral envelope
 	else:
 		transp_type = " -trans " # don't preserve
+
+	if loudness_norm:
+		loudness_flat = " -envpl 1 "
+	else:
+		loudness_flat= " "
 	
 	#verbose baby
 	if verbose:
@@ -294,7 +300,7 @@ def transpose_sound(source_sound, nb_cents
 	if perserve_transient:
 		transient = " -P1 "
 	else:
-		transient =""
+		transient =" "
 		
 	if low_pass_filter_freq != None:
 		low_pass_tag = " -tr_filt "+str(low_pass_filter_freq) + " "
@@ -307,7 +313,7 @@ def transpose_sound(source_sound, nb_cents
 	win_oversampling = str(win_oversampling)
 
 
-	parameters =  "-t -Afft "+ fft_size+ " -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z"+transp_type+str(nb_cents)+ verbose_flag+transient+low_pass_tag +"-S"+ source_sound+ " " + target_sound
+	parameters =  "-t -Afft "+ fft_size+ " -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z"+transp_type+str(nb_cents)+ loudness_flat + verbose_flag+transient+low_pass_tag +"-S"+ source_sound+ " " + target_sound
 
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
@@ -334,6 +340,7 @@ def dynamic_f0_transposition(times
 							, verbose=False
 							, low_pass_filter_freq=None
 							, wait = True
+							, loudness_norm = False
 							):
 	"""
 		Use super vp to do a dynamic f0 transposition
@@ -364,6 +371,7 @@ def dynamic_f0_transposition(times
 					, perserve_transient=perserve_transient
 					, verbose=verbose
 					, low_pass_filter_freq=low_pass_filter_freq
+					, loudness_norm = loudness_norm
 			)
 	
 	os.remove(pitch_txt)
