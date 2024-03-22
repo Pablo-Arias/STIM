@@ -87,6 +87,7 @@ def change_bit_encoding(source, target, new_pcm):
 	new_pcm : 
 	This function hasn't been tested
 	"""
+	
 	x, fs = soundfile.read(str(source))		
 	soundfile.write(target, x, fs, new_pcm)
 
@@ -100,6 +101,17 @@ def down_sample_audio_file(source, target, new_sf):
 
 	extension = get_file_without_path(source, with_extension=True).split(".")[1]
 	sound.export(out_f=target, format=extension)
+
+
+def combine_audio_files(audios, output):
+	import subprocess
+	import os
+	
+	command = "ffmpeg -i "+audios[0]+" -i "+audios[1]+" -filter_complex \"[0][1]amix=inputs=2[a]\" -map \"[a]\" "+output
+
+	subprocess.call(command, shell=True)
+
+	
 
 
 ##### ------------------------------------------------------	

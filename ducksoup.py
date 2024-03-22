@@ -195,6 +195,70 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
         
         os.remove( aux_wav)
 
+
+def ds_process_audio_only(source_folder
+                            , folder_tag
+                            , target_folder="audio_preproc/"
+                            , extension=".ogg"
+                            , trimed_path="trimed/"
+                            , combined_path = "combined_audio/"
+                            , combine_audio_flag=True
+                            , verbose=True
+                            , resolution="1280:720"
+                            , preset="veryslow"
+                            , crf = "18"
+                            , target_fps = "30"):
+    
+    import soundfile as sf
+    from transform_audio import combine_audio_files
+
+    os.makedirs(target_folder, exist_ok=True)
+
+    # trim audio files so they are in sync
+    trim_folder(source_folder=source_folder
+                , folder_tag=folder_tag
+                , target_folder=target_folder
+                , trimed_path=trimed_path
+                , extension=extension
+                , verbose=verbose
+                )
+
+    # 
+    source_folder = target_folder + trimed_path + folder_tag
+    
+    if verbose:
+        print("combining audios...")
+        print()
+        
+    #Combine videos
+    nb_files = len(glob.glob(source_folder + "*" + extension))
+    if nb_files != 4 and nb_files != 2 :
+        print("I can only combine 4 or 2 videos, nb file is "+ str(nb_files))
+        print()
+        return
+    
+
+    os.makedirs(target_folder+ combined_path+folder_tag, exist_ok=True)    
+    
+    #Get (dry files and wet files)
+    files = glob.glob(source_folder + "*"+ extension)
+    players = []
+    for file in files:
+        players.append(get_player(file))
+    players = np.unique(players)
+    dyad = get_dyad(file)
+
+    #For dry and wet:
+    for manipulation in ("dry", "wet"):
+        #Get all dry or wet files
+        file_list = glob.glob(source_folder+"*"+manipulation + extension)
+        if len(file_list) == 2:
+            #combine files in organised_files
+            print(file_list)
+            combine_audio_files(file_list, target_folder + combined_path + folder_tag + manipulation + extension)
+
+
+
 def ds_process(source_folder
                             , folder_tag
                             , target_folder="preproc/"
