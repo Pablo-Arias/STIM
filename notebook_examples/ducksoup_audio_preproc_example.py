@@ -16,4 +16,4 @@ import glob
 
 for source_folder in glob.glob("data/audio_only/mkultimatum_game_template4/*/recordings/"):
     folder_tag = source_folder.split("/")[-3] + "/"
-    ds_process_audio_only(source_folder=source_folder, folder_tag=folder_tag, preset="veryfast")
+    ds_process_audio_only(source_folder=source_folder, folder_tag=folder_tag)
