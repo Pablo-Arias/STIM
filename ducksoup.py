@@ -202,12 +202,7 @@ def ds_process_audio_only(source_folder
                             , extension=".ogg"
                             , trimed_path="trimed/"
                             , combined_path = "combined_audio/"
-                            , combine_audio_flag=True
-                            , verbose=True
-                            , resolution="1280:720"
-                            , preset="veryslow"
-                            , crf = "18"
-                            , target_fps = "30"):
+                            , verbose=True):
     
     import soundfile as sf
     from transform_audio import combine_audio_files
@@ -230,7 +225,7 @@ def ds_process_audio_only(source_folder
         print("combining audios...")
         print()
         
-    #Combine videos
+    #Combine audios
     nb_files = len(glob.glob(source_folder + "*" + extension))
     if nb_files != 4 and nb_files != 2 :
         print("I can only combine 4 or 2 videos, nb file is "+ str(nb_files))
@@ -246,7 +241,6 @@ def ds_process_audio_only(source_folder
     for file in files:
         players.append(get_player(file))
     players = np.unique(players)
-    dyad = get_dyad(file)
 
     #For dry and wet:
     for manipulation in ("dry", "wet"):
