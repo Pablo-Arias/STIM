@@ -1,4 +1,4 @@
-from video_processing import combine_videos, get_movie_duration, change_frame_rate, extract_audio, combine_audio, replace_audio, extract_sub_video_sentences, re_encode
+from video_processing import combine_videos, get_movie_duration, change_frame_rate, extract_audio, combine_audio, replace_audio, extract_sub_video_sentences, re_encode, combine_2_videos
 from conversions import get_file_without_path
 import glob
 import os
@@ -137,8 +137,8 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
         
     #Combine videos
     nb_files = len(glob.glob(source_folder + "*" + extension))
-    if nb_files != 4 :
-        print("I can only combine 4 videos, nb file is "+ str(nb_files))
+    if nb_files != 4 and nb_files != 2 :
+        print("I can only combine 4 or 2 videos, nb file is "+ str(nb_files))
         print()
         return
     
@@ -153,13 +153,22 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
     organised_files = []
     for player in players:
         for manipulation in manipulations:
-            organised_files.append(glob.glob(source_folder+"*"+dyad+"*"+player+"*"+manipulation+ extension)[0])
+            file_list = glob.glob(source_folder+"*"+dyad+"*"+player+"*"+manipulation+ extension)
+            if len(file_list)>0:
+                organised_files.append(file_list[0])
     
     if not os.path.isdir(target_folder + combined_path):
         os.mkdir(target_folder+ combined_path)
     
     output = target_folder+combined_path + combined_video_name + extension
-    combine_videos( tl = organised_files[0], tr = organised_files[1], bl = organised_files[2], br = organised_files[3], output= output)
+    #Dyads with manipulated and non-manipulated
+    if len(organised_files) == 4: 
+        combine_videos( tl = organised_files[0], tr = organised_files[1], bl = organised_files[2], br = organised_files[3], output= output)
+    
+    #Dyads without manipulated
+    elif len(organised_files) == 2:
+        combine_2_videos(organised_files[0], organised_files[1], output, combine_audio_flag=False)
+
 
     #extract and combine audios
     if combine_audio_flag:

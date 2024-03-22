@@ -279,9 +279,9 @@ def transpose_sound(source_sound, nb_cents
 		transp_type = " -trans " # don't preserve
 
 	if loudness_norm:
-		loudness_flat = " -envpl 1 "
+		loudness_flag = " -envpl 1 "
 	else:
-		loudness_flat= " "
+		loudness_flag= " "
 	
 	#verbose baby
 	if verbose:
@@ -313,7 +313,7 @@ def transpose_sound(source_sound, nb_cents
 	win_oversampling = str(win_oversampling)
 
 
-	parameters =  "-t -Afft "+ fft_size+ " -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z"+transp_type+str(nb_cents)+ loudness_flat + verbose_flag+transient+low_pass_tag +"-S"+ source_sound+ " " + target_sound
+	parameters =  "-t -Afft "+ fft_size+ " -M"+window_size+" -Np"+fft_oversampling+" -oversamp "+win_oversampling +" -Z"+transp_type+str(nb_cents)+ loudness_flag + verbose_flag+transient+low_pass_tag +"-S"+ source_sound+ " " + target_sound
 
 	cmd 		= super_vp_path + " " + parameters
 	args 		= shlex.split(cmd)
@@ -377,7 +377,7 @@ def dynamic_f0_transposition(times
 	os.remove(pitch_txt)
 
 
-# ---------- transpose_sound
+# ---------- env_transpose
 def env_transpose(source_sound, target_sound, nb_cents, wait = True, env_warp_ws=512, lpc_order=25 , win_oversampling = 64, fft_oversampling=2):
 	"""
 	transpose source sound from number of cents and generate target_sound
