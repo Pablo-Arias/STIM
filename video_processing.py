@@ -164,8 +164,7 @@ def get_movie_duration(video, in_seconds=True):
 	#	f_dur       = datetime.strptime(f_dur, "%H:%M:%S.%f")
 	#	a_timedelta = f_dur - datetime(1900, 1, 1)
 	#	result      = a_timedelta.total_seconds()
-	
-	return result
+	#return result
 
 	
 def extract_sentences_in_video(source_name, target_folder, rms_threshold = -50, WndSize = 16384, overlap = 8192):
