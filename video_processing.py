@@ -126,6 +126,16 @@ def get_movie_stream(video):
 	output = subprocess.check_output(command, shell=True)
 	return output
 
+def get_length(filename):
+	import subprocess
+	result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                             "format=duration", "-of",
+                             "default=noprint_wrappers=1:nokey=1", filename],
+							stdout=subprocess.PIPE,
+        					stderr=subprocess.STDOUT
+							)
+	
+	return float(result.stdout)
 
 
 def get_movie_duration(video, in_seconds=True):
@@ -139,11 +149,12 @@ def get_movie_duration(video, in_seconds=True):
 	import os
 	import shlex, subprocess
 
-	command = "ffmpeg -i "+video+" 2>&1 | grep \"Duration\""
-	result = subprocess.check_output(command, shell=True)
+	#command = "ffmpeg -i "+video+" 2>&1 | grep \"Duration\""
+	#result = subprocess.check_output(command, shell=True)
 
-	output      = str(result)
-	f_dur       = output.split(" ")[3][:-1]
+	#output      = str(result)
+	#f_dur       = output.split(" ")[3][:-1]
+	f_dur = get_length(video)
 
 	if f_dur == "N/A":
 		result = 0
