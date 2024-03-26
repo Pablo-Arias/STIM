@@ -155,14 +155,15 @@ def get_movie_duration(video, in_seconds=True):
 	#output      = str(result)
 	#f_dur       = output.split(" ")[3][:-1]
 	f_dur = get_length(video)
+	return f_dur
 
-	if f_dur == "N/A":
-		result = 0
+	#if f_dur == "N/A":
+	#	result = 0
 		
-	elif in_seconds:	
-		f_dur       = datetime.strptime(f_dur, "%H:%M:%S.%f")
-		a_timedelta = f_dur - datetime(1900, 1, 1)
-		result      = a_timedelta.total_seconds()
+	#elif in_seconds:	
+	#	f_dur       = datetime.strptime(f_dur, "%H:%M:%S.%f")
+	#	a_timedelta = f_dur - datetime(1900, 1, 1)
+	#	result      = a_timedelta.total_seconds()
 	
 	return result
 
