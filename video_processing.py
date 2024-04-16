@@ -146,26 +146,9 @@ def get_movie_duration(video, in_seconds=True):
 		video : videon input
 	"""	
 	import subprocess
-	import os
-	import shlex, subprocess
 
-	#command = "ffmpeg -i "+video+" 2>&1 | grep \"Duration\""
-	#result = subprocess.check_output(command, shell=True)
-
-	#output      = str(result)
-	#f_dur       = output.split(" ")[3][:-1]
 	f_dur = get_length(video)
 	return f_dur
-
-	#if f_dur == "N/A":
-	#	result = 0
-		
-	#elif in_seconds:	
-	#	f_dur       = datetime.strptime(f_dur, "%H:%M:%S.%f")
-	#	a_timedelta = f_dur - datetime(1900, 1, 1)
-	#	result      = a_timedelta.total_seconds()
-	#return result
-
 	
 def extract_sentences_in_video(source_name, target_folder, rms_threshold = -50, WndSize = 16384, overlap = 8192):
 	"""

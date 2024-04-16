@@ -153,7 +153,7 @@ def combine_folder(source_folder, folder_tag, target_folder, combined_path, comb
     organised_files = []
     for player in players:
         for manipulation in manipulations:
-            file_list = glob.glob(source_folder+"*"+dyad+"*"+player+"*"+manipulation+ extension)
+            file_list = glob.glob(source_folder+"*"+dyad+"*"+"-u-"+player+"*"+manipulation+ extension)
             if len(file_list)>0:
                 organised_files.append(file_list[0])
     
@@ -208,6 +208,9 @@ def ds_process_audio_only(source_folder
     from transform_audio import combine_audio_files
 
     os.makedirs(target_folder, exist_ok=True)
+    nb_files = len(glob.glob(source_folder + "*" + extension))
+    if nb_files == 0 :
+        return
 
     # trim audio files so they are in sync
     trim_folder(source_folder=source_folder
@@ -227,7 +230,7 @@ def ds_process_audio_only(source_folder
         
     #Combine audios
     nb_files = len(glob.glob(source_folder + "*" + extension))
-    if nb_files != 4 and nb_files != 2 :
+    if nb_files != 4 or nb_files != 2 :
         print("I can only combine 4 or 2 videos, nb file is "+ str(nb_files))
         print()
         return
