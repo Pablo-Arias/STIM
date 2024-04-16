@@ -230,7 +230,7 @@ def ds_process_audio_only(source_folder
         
     #Combine audios
     nb_files = len(glob.glob(source_folder + "*" + extension))
-    if nb_files != 4 or nb_files != 2 :
+    if nb_files != 4 and nb_files != 2 :
         print("I can only combine 4 or 2 videos, nb file is "+ str(nb_files))
         print()
         return
