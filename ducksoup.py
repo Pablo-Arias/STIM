@@ -233,7 +233,7 @@ def ds_process_audio_only(source_folder
     if nb_files != 4 and nb_files != 2 :
         print("I can only combine 4 or 2 videos, nb file is "+ str(nb_files))
         print()
-        continue
+        return
     
 
     os.makedirs(target_folder+ combined_path+folder_tag, exist_ok=True)    
