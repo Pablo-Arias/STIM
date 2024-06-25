@@ -1,17 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
-from subprocess import call
 import shlex, subprocess
 import os
-import numpy as np
-from shutil import copyfile
-from conversions import get_file_without_path
 
-mozza_path = "/Users/arias/Documents/Developement/ducksoup/gitlab.com/mozza"
-
-
-
-def create_deformation_file(container_folder, source, model, output, wait=True):
+def create_deformation_file(container_folder, source, model, output, d_lib_model="shape_predictor_68_face_landmarks.dat", wait=True):
 	"""
 	|Description : Create a deformation file using two images, a source and a model
 	|
@@ -20,6 +12,7 @@ def create_deformation_file(container_folder, source, model, output, wait=True):
 	|		source : file to transform
 	|		model : file to modek the expression
 	|		output : deformation file, the extentsion should be .dfm
+	|		d_lib_model : name of dlib model located inside the conainer folder.
 	|
 	|
 	|	Example:
@@ -27,8 +20,8 @@ def create_deformation_file(container_folder, source, model, output, wait=True):
 	|
 	|		container_folder = "/Users/arias/Desktop/mozza_transform/data"
 	|		source           = "neutral.png"
-	|		model           = "smile.png"
-	|		output         = "smile_transform.dfm"
+	|		model            = "smile.png"
+	|		output           = "smile_transform.dfm"
 	|
 	|		transform_img_with_mozza(container_folder,  source, model, wait=True, deformation_file=def_file, alpha=1.0
 	| 									, face_thresh=0.25 , overlay=False , beta=0.1, fc=5.0
@@ -37,7 +30,7 @@ def create_deformation_file(container_folder, source, model, output, wait=True):
 	"""
 
 
-	cmd 		= "docker run -v "+container_folder+":/data -v "+mozza_path+":/mozza-path ducksouplab/mozza mozza-templater -b -m /mozza-path/data/in/shape_predictor_68_face_landmarks.dat -n /data/"+source+" -s /data/"+model+" -o /data/"+output
+	cmd 		= "docker run -v "+container_folder+":/data ducksouplab/mozza mozza-templater -b -m /data/"+d_lib_model+" -n /data/"+source+" -s /data/"+model+" -o /data/"+output
 
 	args 		= shlex.split(cmd)
 
