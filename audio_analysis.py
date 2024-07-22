@@ -33,7 +33,10 @@ from parselmouth.praat import call
 # ----------------- 
 # --------------------------------------------------------------------#
 def centroid(x, axis):
-	return np.sum(x*axis) / np.sum(x) # return weighted mean
+	sum_x = np.sum(x)
+	if sum_x == 0:
+		return np.nan  # Return NaN or an appropriate value to handle the divide-by-zero case
+	return np.sum(x * axis) / sum_x
 
 def get_spectral_centroid(audio_file, window_size = 256, noverlap = 0, plot_specgram = False):
 	"""
