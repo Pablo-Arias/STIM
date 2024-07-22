@@ -11,7 +11,10 @@
 import numpy as np
 import os
 
-def lin2db(vec): return 20.*np.log10(vec)
+def lin2db(vec):
+    epsilon = 1e-10  # Small constant to avoid log10(0)
+    return 20. * np.log10(np.maximum(vec, epsilon))
+
 def db2lin(vec): return 10**(vec/20.)
 
 def hz_to_cents(f0, f1):
