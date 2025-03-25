@@ -134,7 +134,13 @@ def get_length(filename):
 							stdout=subprocess.PIPE,
         					stderr=subprocess.STDOUT
 							)
-	
+
+	duration_str = result.stdout.decode().strip()
+
+	# Check if ffprobe returned something valid
+	if not duration_str or not duration_str.replace('.', '', 1).isdigit():
+		return 0
+
 	return float(result.stdout)
 
 
