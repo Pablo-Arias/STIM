@@ -26,6 +26,8 @@ import contextlib
 import collections
 import parselmouth
 from parselmouth.praat import call
+import os
+
 
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
@@ -1759,6 +1761,76 @@ def analyse_audio_folder(source_folder
 						, formant_method		 = formant_method
 						, target_folder			 = target_folder
 						)
+		
+## ----- Multihtrading helpers
+def _available_cpus() -> int:
+    """CPUs actually available to this process (respects cgroups/SLURM cpusets)."""
+    try:
+        return len(os.sched_getaffinity(0))
+    except Exception:
+        return os.cpu_count() or 1
+
+def _effective_nprocs(n_jobs=None) -> int:
+    """
+    Resolve worker process count:
+    - explicit n_jobs wins
+    - STIM_NPROCS env overrides
+    - under SLURM: use CPUS_PER_TASK * NTASKS (or CPUS_PER_TASK / CPUS_ON_NODE)
+    - always clamp to CPUs available to this process (cpuset)
+    - outside SLURM: use available CPUs
+    """
+    # 1) explicit
+    if isinstance(n_jobs, int) and n_jobs > 0:
+        return n_jobs
+
+    # 2) user override
+    env = os.getenv("STIM_NPROCS")
+    if env:
+        try:
+            return max(1, int(env))
+        except ValueError:
+            pass
+
+    # 3) base on affinity/cpuset
+    allowed = _available_cpus()
+
+    # 4) SLURM-aware if present
+    if os.getenv("SLURM_JOB_ID"):
+        try:
+            ntasks = int(os.getenv("SLURM_NTASKS") or 1)
+            cpt    = int(os.getenv("SLURM_CPUS_PER_TASK") or 0)
+            con    = int(os.getenv("SLURM_CPUS_ON_NODE") or 0)
+
+            if cpt and ntasks:
+                slurm_cpus = cpt * ntasks
+            elif cpt:
+                slurm_cpus = cpt
+            elif con:
+                slurm_cpus = con
+            else:
+                slurm_cpus = allowed
+
+            # Respect cpuset; don’t oversubscribe the cores we actually have
+            return max(1, min(slurm_cpus, allowed))
+        except Exception:
+            # any parsing trouble → fall back to allowed
+            return max(1, allowed)
+
+    # 5) non-SLURM: just use what we’re allowed
+    return max(1, allowed)
+
+def _worker_init_single_thread():
+    """Keep one thread per process to avoid threads×procs explosion."""
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+    os.environ.setdefault("MKL_NUM_THREADS", "1")
+    os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+    os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+    try:
+        from threadpoolctl import threadpool_limits
+        threadpool_limits(1)
+    except Exception:
+        pass		
 
 ## analyse_audio_folder_parallel
 def analyse_audio_folder_parallel(source_folder
@@ -1776,8 +1848,9 @@ def analyse_audio_folder_parallel(source_folder
 						, sc_ws                 = 512
 						, parameter_tag         = None
 						, verbose               = False
-						, formant_method		 = 'mean'
-						, target_folder			 = "audio_analysis/"
+						, formant_method		= 'mean'
+						, target_folder			= "audio_analysis/"
+                        , n_jobs                = None   
 						):
 	"""
 	Analyse all the sounds from a folder and returns a data frame with key vocal features using parallel computations (In different CPU cores).
@@ -1816,10 +1889,11 @@ def analyse_audio_folder_parallel(source_folder
 	except:
 		pass
 
-	pool_obj = multiprocessing.Pool()
 	files     = glob.glob(source_folder)
+	nprocs = _effective_nprocs(n_jobs)
 
-	pool_obj.starmap(analyse_audio_file, zip(files
+	with multiprocessing.Pool(processes=nprocs,initializer=_worker_init_single_thread,maxtasksperchild=8) as pool_obj:
+		pool_obj.starmap(analyse_audio_file, zip(files
 										, repeat(speed_of_sound)
 										, repeat(time_step)
 										, repeat(window_size)
@@ -1993,6 +2067,7 @@ def analyse_audio_file_ts(file
 
 		#Save plot
 		plt.savefig(target_folder + file_tag + ".pdf")
+		plt.close()
 
 # analyse_audio_file_ts_folder_parallel
 def analyse_audio_ts_folder(source_folder  
@@ -2010,6 +2085,8 @@ def analyse_audio_ts_folder(source_folder
 							, silence_threshold      = -50
 							, target_folder			 = "audio_analysis/"
 							, plot_features          = True
+							, n_jobs                 = None   
+
 							):
 	"""
 	Extract Time series of features in parallel CPU cores
@@ -2021,9 +2098,11 @@ def analyse_audio_ts_folder(source_folder
 	os.makedirs(target_folder, exist_ok=True)
 
 	print("Start of analyse_audio_ts_folder", flush=True)
-	pool_obj = multiprocessing.Pool()
+
 	files     = glob.glob(source_folder)
-	pool_obj.starmap(analyse_audio_file_ts, zip(files
+	nprocs = _effective_nprocs(n_jobs)
+	with multiprocessing.Pool(processes=nprocs, initializer=_worker_init_single_thread, maxtasksperchild=8) as pool_obj:
+		pool_obj.starmap(analyse_audio_file_ts, zip(files
 										, repeat(time_step)				
 										, repeat(praat_ws)			    
 										, repeat(sc_ws)                
