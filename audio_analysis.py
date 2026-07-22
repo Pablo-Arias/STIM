@@ -965,6 +965,85 @@ def estimate_vtl(Fname 		, speed_of_sound 		= 335
 
 	return vtl
 
+## ------------------------------------------------------------
+## ------------------------------------------------------------
+## ------------------------------------------------------------
+## ------------------------------------------------------------
+## Spectral Envelope but not relying on SUPER-VP
+## ------------------------------------------------------------
+## ------------------------------------------------------------
+## ------------------------------------------------------------
+## ------------------------------------------------------------
+
+def get_mean_true_env(audio_file, in_db=True):
+	"""
+	Replaces SuperVP -Ate and mean_matrix.
+	Uses PyWorld to extract the True Envelope and averages it over time.
+	"""
+	import pyworld as pw
+	import soundfile as sf
+	import librosa
+	x, fs = sf.read(audio_file)
+	if x.dtype != np.float64:
+		x = x.astype(np.float64)
+		
+	# PyWorld requires F0 to cleanly extract the envelope
+	_f0, t = pw.dio(x, fs)
+	f0 = pw.stonemask(x, _f0, t, fs)
+
+	# Extract True Envelope (CheapTrick). Shape: (n_frames, n_freq_bins)
+	sp = pw.cheaptrick(x, f0, t, fs)
+
+	# Average across the time axis (axis 0) to get a single mean envelope
+	mean_env = np.mean(sp, axis=0)
+
+	# Generate the corresponding frequency vector for the DataFrame index
+	n_bins = sp.shape[1]
+	f = np.linspace(0, fs / 2, n_bins)
+
+	mean_env = np.mean(mean_env, axis=0)
+
+	if in_db:
+		mean_env = librosa.power_to_db(mean_env, ref=np.max)	
+
+	return mean_env, f, n_bins
+
+def get_mean_lpc_env(audio_file, n_bins, nb_coefs=25, in_db=True):
+	"""
+	Replaces SuperVP -Alpc and mean_matrix.
+	Computes LPC, evaluates its frequency response, and averages over time.
+	in_db : returns amplitudes values in db
+	"""
+	import librosa
+	y, sr = librosa.load(audio_file, sr=None)
+
+	# Frame audio (n_fft is derived from the number of bins we need to match PyWorld)
+	n_fft = (n_bins - 1) * 2
+	hop_length = n_fft // 4
+
+	frames = librosa.util.frame(y, frame_length=n_fft, hop_length=hop_length)
+	window = librosa.filters.get_window('hann', n_fft).reshape(-1, 1)
+	frames_windowed = frames * window
+
+	# Compute LPC coefficients for each frame
+	# Shape: (n_frames, nb_coefs + 1)
+	lpc_coefs = librosa.lpc(y=frames_windowed.T, order=nb_coefs)
+
+	# Convert coefficients to spectral envelopes
+	lpc_envs = []
+	for a in lpc_coefs:
+		# Evaluate the frequency response of the LPC filter (H(z) = 1 / A(z))
+		_, h = scipy.signal.freqz([1.0], a, worN=n_bins)
+		lpc_envs.append(np.abs(h)**2) # Store power spectrum
+
+	lpc_env = np.mean(lpc_envs, axis=0)
+
+	if in_db:
+		lpc_env = librosa.power_to_db(lpc_env, ref=np.max)
+		
+	return lpc_env
+
+
 # --------------------------------------------------------------------#
 # --------------------------------------------------------------------#
 # ----------------- Spectral Enveloppes
