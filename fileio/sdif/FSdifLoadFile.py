@@ -1,7 +1,12 @@
 from __future__ import division
 from __future__ import absolute_import
 import collections
-import eaSDIF
+try:
+    import eaSDIF
+except ImportError:
+    import unittest.mock
+    eaSDIF = unittest.mock.MagicMock()
+    eaSDIF.Entity = lambda: (_ for _ in ()).throw(NotImplementedError("eaSDIF (C++) is a legacy Intel-only package and fundamentally unsupported on native Apple Silicon."))
 import numpy as np
 from six.moves import range
 from six.moves import zip

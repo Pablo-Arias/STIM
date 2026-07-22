@@ -1181,11 +1181,14 @@ def get_rms_from_data(data, in_db = True):
 	"""
 	Returns the root-mean-square (power) of the audio buffer
 	"""
-	from conversions import lin2db
-	rms = np.sqrt(np.mean(data**2))
-	if in_db:
-		rms 		= lin2db(rms)
-	return rms
+	if len(data)>0:
+		from conversions import lin2db
+		rms = np.sqrt(np.mean(data**2))
+		if in_db:
+			rms 		= lin2db(rms)
+		return rms
+	else:
+		return np.nan
 
 
 

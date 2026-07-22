@@ -12,7 +12,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from pylab import plot, show, title, xlabel, ylabel, subplot, savefig, grid, specgram, suptitle, yscale
-from scipy import fft, arange, ifft, io
+from scipy import fft, io
 from numpy import sin, linspace, pi, cos, sin, random, array
 import numpy as np
 from scipy.io.wavfile import read, write
@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from pylab import *
 import os
 import soundfile
+from numpy.fft import ifft
 
 # ---------- local imports
 from parse_sdif import mean_matrix
@@ -65,7 +66,7 @@ def plot_PS(data, Fs):
 	pyplot.subplot(2,1,2)
 
 	n 	= len(y)
-	k 	= arange(n)
+	k 	= np.arange(n)
 	T 	= n/Fs
 	frq = k/T # two sides frequency range
 	frq = frq[list(range(n/2))] # one side frequency range

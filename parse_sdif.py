@@ -16,7 +16,12 @@ import os
 import sys
 
 #sdif
-import eaSDIF
+try:
+    import eaSDIF
+except ImportError:
+    import unittest.mock
+    eaSDIF = unittest.mock.MagicMock()
+    eaSDIF.Entity = lambda: (_ for _ in ()).throw(NotImplementedError("eaSDIF (C++) is a legacy Intel-only package and fundamentally unsupported on native Apple Silicon."))
 from fileio.sdif.FSdifLoadFile import FSdifLoadFile
 from six.moves import range
 
